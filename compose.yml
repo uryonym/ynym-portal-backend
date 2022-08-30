@@ -9,6 +9,8 @@ services:
     environment:
       TZ: Asia/Tokyo
       RAILS_ENV: production
+    ports:
+      - 5000:5000
     volumes:
       - ./log:/app/log
 
