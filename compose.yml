@@ -1,0 +1,17 @@
+services:
+  ynym-portal-backend:
+    build: .
+    image: ynym-portal-backend
+    container_name: ynym-portal-backend
+    hostname: ynym-portal-backend
+    command: /bin/bash -c "rm -f tmp/pids/server.pid && bundle exec rails s"
+    restart: always
+    environment:
+      TZ: Asia/Tokyo
+      RAILS_ENV: production
+    volumes:
+      - ./log:/app/log
+
+networks:
+  default:
+    name: ynym-portal-network

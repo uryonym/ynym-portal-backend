@@ -1,0 +1,18 @@
+default: &default
+  adapter: postgresql
+  encoding: utf8
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: localhost
+  username: uryonym
+  password: uryonym
+
+development:
+  <<: *default
+  database: ynym_portal_development
+test:
+  <<: *default
+  database: ynym_portal_test
+production:
+  <<: *default
+  host: ynym-portal-db
+  database: ynym_portal
