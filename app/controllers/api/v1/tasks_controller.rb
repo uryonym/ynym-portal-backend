@@ -1,16 +1,12 @@
 class Api::V1::TasksController < ApplicationController
   def index
-    tasks = Task.all
+    tasks = Task.where(uid: @current_user.uid).order(:created_at)
     render json: tasks
-  end
-
-  def show
-    task = Task.find(params[:id])
-    render json: task
   end
 
   def create
     task = Task.new(task_params)
+    task.uid = @current_user.uid
     if task.save
       render json: task
     else
