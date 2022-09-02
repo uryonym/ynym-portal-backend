@@ -16,7 +16,7 @@ module FirebaseAuthenticator
       verify_iss: true,
       aud: PROJECT_ID,
       verify_aud: true,
-      verify_iat: true,
+      verify_iat: false,
     }
 
     payload, _ = JWT.decode(token, nil, true, options) do |header|
