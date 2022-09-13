@@ -40,7 +40,7 @@ pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
 #
 # preload_app!
 
-if rails_env = 'production'
+if rails_env == 'production'
   ssl_bind(
     '0.0.0.0',
     rails_port,
