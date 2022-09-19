@@ -1,6 +1,6 @@
 class ApplicationController < ActionController::API
   include FirebaseAuthenticator
-  before_action :authenticate
+  before_action :authenticate, if: proc { Rails.env.production? }
   class AuthenticationError < StandardError; end
   rescue_from AuthenticationError, with: :not_authenticated
 
