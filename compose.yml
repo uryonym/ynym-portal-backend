@@ -19,5 +19,6 @@ services:
 networks:
   default:
     name: ynym-portal-network
+    external: true
   proxy-network:
     external: true
