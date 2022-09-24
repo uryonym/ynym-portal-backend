@@ -1,6 +1,6 @@
 class Api::V1::TasksController < ApplicationController
   def index
-    tasks = Task.where(uid: @current_user.uid).order(:created_at)
+    tasks = Task.where(uid: @current_user.uid).order(:dead_line, :created_at)
     render json: tasks
   end
 
