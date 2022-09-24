@@ -1,4 +1,4 @@
-class AuthInfosController < ApplicationController
+class Api::V1::AuthInfosController < ApplicationController
   def index
     auth_infos = AuthInfo.all.order(:created_at)
     render json: auth_infos
