@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_19_113927) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_08_123048) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -22,7 +22,16 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_19_113927) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["service_name"], name: "index_auth_infos_on_service_name", unique: true
-  end  end
+  end
+
+  create_table "task_lists", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "uid", null: false
+    t.string "share_uid"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_task_lists_on_name", unique: true
+  end
 
   create_table "tasks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "title", null: false
