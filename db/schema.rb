@@ -21,7 +21,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_19_113927) do
     t.string "other"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-  end
+    t.index ["service_name"], name: "index_auth_infos_on_service_name", unique: true
+  end  end
 
   create_table "tasks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "title", null: false
@@ -31,6 +32,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_19_113927) do
     t.boolean "is_complete", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["title"], name: "index_tasks_on_title"
   end
 
   create_table "users", primary_key: "uid", id: :string, force: :cascade do |t|
