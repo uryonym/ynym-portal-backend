@@ -30,7 +30,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_08_123048) do
     t.string "share_uid"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_task_lists_on_name", unique: true
+    t.index ["name", "uid"], name: "index_task_lists_on_name_and_uid", unique: true
   end
 
   create_table "tasks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
