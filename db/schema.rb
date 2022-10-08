@@ -28,8 +28,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_19_113927) do
     t.string "title", null: false
     t.string "description"
     t.date "dead_line"
-    t.string "uid", null: false
     t.boolean "is_complete", default: false, null: false
+    t.string "uid", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["title"], name: "index_tasks_on_title"
