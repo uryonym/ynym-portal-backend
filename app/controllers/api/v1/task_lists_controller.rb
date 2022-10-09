@@ -1,7 +1,7 @@
 class Api::V1::TaskListsController < ApplicationController
   def index
-    task_lists = TaskList.where(uid: @current_user.uid).order(:created_at)
-    render json: task_lists
+    task_lists = TaskList.includes(:tasks).where(uid: @current_user.uid).order(:created_at)
+    render json: task_lists.to_json(:include => :tasks)
   end
 
   def create
