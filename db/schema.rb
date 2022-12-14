@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_08_123048) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_13_142409) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -22,6 +22,33 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_08_123048) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["service_name"], name: "index_auth_infos_on_service_name", unique: true
+  end
+
+  create_table "cars", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "maker", null: false
+    t.string "model", null: false
+    t.integer "model_year", null: false
+    t.string "license_plate"
+    t.integer "tank_capacity"
+    t.string "uid", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name", "uid"], name: "index_cars_on_name_and_uid", unique: true
+  end
+
+  create_table "refuelings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "refuel_datetime", null: false
+    t.integer "odometer", null: false
+    t.string "fuel_type", null: false
+    t.integer "price", null: false
+    t.integer "quantity", null: false
+    t.boolean "full_flag", default: true, null: false
+    t.string "gas_stand", null: false
+    t.string "uid", null: false
+    t.uuid "car_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "task_lists", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
