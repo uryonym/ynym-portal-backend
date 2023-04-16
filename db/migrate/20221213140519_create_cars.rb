@@ -7,11 +7,8 @@ class CreateCars < ActiveRecord::Migration[7.0]
       t.integer :model_year, null: false
       t.string :license_plate
       t.integer :tank_capacity
-      t.string :uid, null: false
 
       t.timestamps
     end
-
-    add_index :cars, [:name, :uid], unique: true
   end
 end

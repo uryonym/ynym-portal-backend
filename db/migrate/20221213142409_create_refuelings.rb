@@ -8,7 +8,6 @@ class CreateRefuelings < ActiveRecord::Migration[7.0]
       t.integer :quantity, null: false
       t.boolean :full_flag, null: false, default: true
       t.string :gas_stand, null: false
-      t.string :uid, null: false
       t.uuid :car_id, null: false
 
       t.timestamps

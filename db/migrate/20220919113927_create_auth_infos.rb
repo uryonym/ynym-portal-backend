@@ -8,7 +8,5 @@ class CreateAuthInfos < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
-
-    add_index :auth_infos, :service_name, unique: true
   end
 end

@@ -21,7 +21,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_13_142409) do
     t.string "other"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["service_name"], name: "index_auth_infos_on_service_name", unique: true
   end
 
   create_table "cars", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -31,10 +30,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_13_142409) do
     t.integer "model_year", null: false
     t.string "license_plate"
     t.integer "tank_capacity"
-    t.string "uid", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name", "uid"], name: "index_cars_on_name_and_uid", unique: true
   end
 
   create_table "refuelings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -45,19 +42,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_13_142409) do
     t.integer "quantity", null: false
     t.boolean "full_flag", default: true, null: false
     t.string "gas_stand", null: false
-    t.string "uid", null: false
     t.uuid "car_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-  end
-
-  create_table "task_lists", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "name", null: false
-    t.string "uid", null: false
-    t.string "share_uid"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["name", "uid"], name: "index_task_lists_on_name_and_uid", unique: true
   end
 
   create_table "tasks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -65,17 +52,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_13_142409) do
     t.string "description"
     t.date "dead_line"
     t.boolean "is_complete", default: false, null: false
-    t.string "uid", null: false
-    t.uuid "task_list_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["title"], name: "index_tasks_on_title"
-  end
-
-  create_table "users", primary_key: "uid", id: :string, force: :cascade do |t|
-    t.string "email", null: false
-    t.string "first_name", null: false
-    t.string "last_name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
