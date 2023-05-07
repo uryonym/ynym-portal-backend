@@ -1,4 +1,4 @@
-FROM ruby:3.1.2 AS ruby-base
+FROM ruby:3.2.1 AS ruby-base
 WORKDIR /app
 ENV BUNDLE_PATH vendor/bundle
 
