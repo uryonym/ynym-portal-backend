@@ -1,6 +1,6 @@
 class Api::V1::AuthInfosController < ApplicationController
   def index
-    auth_infos = AuthInfo.all.order(:created_at)
+    auth_infos = AuthInfo.order(:created_at)
     render json: auth_infos
   end
 
@@ -34,7 +34,9 @@ class Api::V1::AuthInfosController < ApplicationController
       :service_name,
       :login_id,
       :password,
-      :other
+      :other,
+      :created_at,
+      :updated_at
     )
   end
 end
