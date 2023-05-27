@@ -7,9 +7,7 @@ class Refueling < ApplicationRecord
   validates :quantity, presence: true
   validates :full_flag, presence: true
   validates :gas_stand, presence: true
-  validates :uid, presence: true
 
   # アソシエーション
-  belongs_to :user, primary_key: :uid, foreign_key: :uid
   belongs_to :car
 end

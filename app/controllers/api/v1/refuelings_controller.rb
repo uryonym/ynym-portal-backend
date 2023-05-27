@@ -1,12 +1,11 @@
 class Api::V1::RefuelingsController < ApplicationController
   def index
-    refuelings = Refueling.where(uid: @current_user.uid).order(:created_at)
+    refuelings = Refueling.order(:created_at)
     render json: refuelings
   end
 
   def create
     refueling = Refueling.new(refueling_params)
-    refueling.uid = @current_user.uid
     if refueling.save
       render json: refueling
     else
@@ -38,7 +37,8 @@ class Api::V1::RefuelingsController < ApplicationController
       :price,
       :quantity,
       :full_flag,
-      :gas_stand
+      :gas_stand,
+      :car_id
     )
   end
 end

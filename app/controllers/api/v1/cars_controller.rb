@@ -1,12 +1,11 @@
 class Api::V1::CarsController < ApplicationController
   def index
-    cars = Car.where(uid: @current_user.uid).order(:created_at)
+    cars = Car.order(:created_at)
     render json: cars
   end
 
   def create
     car = Car.new(car_params)
-    car.uid = @current_user.uid
     if car.save
       render json: car
     else

@@ -4,9 +4,7 @@ class Car < ApplicationRecord
   validates :maker, presence: true
   validates :model, presence: true
   validates :model_year, presence: true
-  validates :uid, presence: true
 
   # アソシエーション
-  belongs_to :user, primary_key: :uid, foreign_key: :uid
-  has_many :cars
+  has_many :refuelings
 end
