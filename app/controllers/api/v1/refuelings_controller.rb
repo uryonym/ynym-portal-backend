@@ -13,6 +13,11 @@ class Api::V1::RefuelingsController < ApplicationController
     end
   end
 
+  def show
+    refueling = Refueling.find(params[:id])
+    render json: refueling
+  end
+
   def update
     refueling = Refueling.find(params[:id])
     if refueling.update(refueling_params)

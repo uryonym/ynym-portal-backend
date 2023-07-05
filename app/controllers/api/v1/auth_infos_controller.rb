@@ -13,6 +13,11 @@ class Api::V1::AuthInfosController < ApplicationController
     end
   end
 
+  def show
+    auth_info = AuthInfo.find(params[:id])
+    render json: auth_info
+  end
+
   def update
     auth_info = AuthInfo.find(params[:id])
     if auth_info.update(auth_info_params)

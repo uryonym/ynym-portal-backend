@@ -13,6 +13,11 @@ class Api::V1::CarsController < ApplicationController
     end
   end
 
+  def show
+    car = Car.find(params[:id])
+    render json: car
+  end
+
   def update
     car = Car.find(params[:id])
     if car.update(car_params)
