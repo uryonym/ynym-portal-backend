@@ -5,7 +5,7 @@ class Api::V1::ConfidentialsController < ApplicationController
   end
 
   def create
-    confidential = Confidential.new(auth_info_params)
+    confidential = Confidential.new(confidential_params)
     if confidential.save
       render json: confidential
     else
