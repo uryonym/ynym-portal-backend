@@ -1,6 +1,6 @@
 require "test_helper"
 
-class AuthInfosControllerTest < ActionDispatch::IntegrationTest
+class ConfidentialTest < ActiveSupport::TestCase
   # test "the truth" do
   #   assert true
   # end
