@@ -1,12 +1,16 @@
 class ApplicationController < ActionController::API
   include FirebaseAuthenticator
-  before_action :authenticate
+  include ActionController::HttpAuthentication::Token::ControllerMethods
+
+  before_action :authenticate_token
   class AuthenticationError < StandardError; end
   rescue_from AuthenticationError, with: :not_authenticated
 
-  def authenticate
-    payload = decode(request.headers["Authorization"]&.split&.last)
-    raise AuthenticationError unless current_user(payload["user_id"])
+  def authenticate_token
+    authenticate_with_http_token do |token, _options|
+      payload = decode(token)
+      raise AuthenticationError unless current_user(payload["user_id"])
+    end
   end
 
   def current_user(user_id = nil)

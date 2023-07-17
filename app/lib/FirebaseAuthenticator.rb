@@ -1,17 +1,18 @@
+require "jwt"
 require "net/http"
 
 module FirebaseAuthenticator
   class InvalidTokenError < StandardError; end
 
-  ALG = "RS256"
-  CERTS_URI = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+  ALGORITHM = "RS256".freeze
+  ISSUER_URI_BASE = "https://securetoken.google.com/".freeze
+  CERTS_URI = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com".freeze
   CERTS_CACHE_KEY = "firebase_auth_certificates"
   PROJECT_ID = "ynym-portal-25b29"
-  ISSUER_URI_BASE = "https://securetoken.google.com/"
 
   def decode(token)
     options = {
-      algorithm: ALG,
+      algorithm: ALGORITHM,
       iss: ISSUER_URI_BASE + PROJECT_ID,
       verify_iss: true,
       aud: PROJECT_ID,
