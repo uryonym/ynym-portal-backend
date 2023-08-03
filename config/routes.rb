@@ -5,6 +5,7 @@ Rails.application.routes.draw do
       resources :confidentials
       resources :cars
       resources :refuelings
+      resources :notes
     end
   end
 end
