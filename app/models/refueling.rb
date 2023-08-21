@@ -4,7 +4,7 @@ class Refueling < ApplicationRecord
   validates :odometer, presence: true
   validates :fuel_type, presence: true
   validates :price, presence: true
-  validates :quantity, presence: true
+  validates :total_cost, presence: true
   validates :full_flag, presence: true
   validates :gas_stand, presence: true
 

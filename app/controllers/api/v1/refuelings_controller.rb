@@ -40,7 +40,7 @@ class Api::V1::RefuelingsController < ApplicationController
       :odometer,
       :fuel_type,
       :price,
-      :quantity,
+      :total_cost,
       :full_flag,
       :gas_stand,
       :car_id

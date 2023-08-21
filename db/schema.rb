@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_08_03_130836) do
+ActiveRecord::Schema[7.0].define(version: 2023_08_21_113023) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -46,7 +46,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_08_03_130836) do
     t.integer "odometer", null: false
     t.string "fuel_type", null: false
     t.integer "price", null: false
-    t.integer "quantity", null: false
+    t.integer "total_cost", null: false
     t.boolean "full_flag", default: true, null: false
     t.string "gas_stand", null: false
     t.uuid "car_id", null: false
