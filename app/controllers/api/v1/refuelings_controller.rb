@@ -1,6 +1,6 @@
 class Api::V1::RefuelingsController < ApplicationController
   def index
-    refuelings = Refueling.order(:created_at)
+    refuelings = Refueling.order(created_at: :desc)
     render json: refuelings
   end
 
