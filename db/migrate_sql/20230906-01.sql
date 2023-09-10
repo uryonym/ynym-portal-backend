@@ -29,7 +29,7 @@ select
   dead_line,
   is_complete,
   'uTnu3ZWTGRUV4gglrxMsYJupoRI3',
-  '04946db1-6c34-476e-ad36-8b2ced4844a9',
+  '0427e51f-ab6b-47c4-a41d-25d489156d7e',
   created_at,
   updated_at
 from tasks_20230906;
