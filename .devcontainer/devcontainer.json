@@ -1,0 +1,49 @@
+{
+  "name": "ynym-portal-backend",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "forwardPorts": [
+    3000,
+    5000
+  ],
+  "workspaceFolder": "/app",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
+  "mounts": [
+    {
+      "source": "ynym-portal-backend-volume",
+      "target": "/usr/local/bundle",
+      "type": "volume"
+    }
+  ],
+  "runArgs": [
+    "--network=develop-network"
+  ],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "rubyLsp.formatter": "none"
+      },
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "janisdd.vscode-edit-csv",
+        "KoichiSasada.vscode-rdbg",
+        "mhutchie.git-graph",
+        "Shopify.ruby-lsp"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "initialZsh": "true",
+      "username": "vscode",
+      "userUid": "1000",
+      "userGid": "1000",
+      "upgradePackages": "true"
+    }
+  },
+  "remoteUser": "vscode",
+  "postCreateCommand": ".devcontainer/boot.sh"
+}
