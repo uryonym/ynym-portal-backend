@@ -1,7 +1,7 @@
 class Api::V1::TaskListsController < ApplicationController
   def index
     task_lists = TaskList.where(uid: @current_user.uid).order(:seq)
-    render json: task_lists, each_serializer: TaskListSerializer
+    render json: task_lists
   end
 
   def create

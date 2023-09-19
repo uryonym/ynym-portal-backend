@@ -40,21 +40,6 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
--- Name: auth_infos; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.auth_infos (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    service_name character varying NOT NULL,
-    login_id character varying NOT NULL,
-    password character varying,
-    other character varying,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
-);
-
-
---
 -- Name: cars; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -66,6 +51,21 @@ CREATE TABLE public.cars (
     model_year integer NOT NULL,
     license_plate character varying,
     tank_capacity integer,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: confidentials; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.confidentials (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    service_name character varying NOT NULL,
+    login_id character varying NOT NULL,
+    password character varying,
+    other character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
@@ -166,10 +166,10 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 
 --
--- Name: auth_infos auth_infos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: confidentials auth_infos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.auth_infos
+ALTER TABLE ONLY public.confidentials
     ADD CONSTRAINT auth_infos_pkey PRIMARY KEY (id);
 
 
@@ -211,6 +211,14 @@ ALTER TABLE ONLY public.schema_migrations
 
 ALTER TABLE ONLY public.task_lists
     ADD CONSTRAINT task_lists_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tasks tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tasks
+    ADD CONSTRAINT tasks_pkey PRIMARY KEY (id);
 
 
 --

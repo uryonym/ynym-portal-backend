@@ -6,6 +6,7 @@ class Api::V1::TasksController < ApplicationController
 
   def create
     task = Task.new(task_params)
+    task.uid = @current_user.uid
     if task.save
       render json: task
     else
@@ -40,10 +41,8 @@ class Api::V1::TasksController < ApplicationController
       :description,
       :dead_line,
       :is_complete,
-      :uid,
       :task_list_id,
-      :created_at,
-      :updated_at
+      :created_at
     )
   end
 end
