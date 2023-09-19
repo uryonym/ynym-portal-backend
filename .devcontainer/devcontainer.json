@@ -4,10 +4,7 @@
     "dockerfile": "Dockerfile",
     "context": ".."
   },
-  "forwardPorts": [
-    3000,
-    5000
-  ],
+  "forwardPorts": [3000, 5000],
   "workspaceFolder": "/app",
   "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
   "mounts": [
@@ -17,17 +14,10 @@
       "type": "volume"
     }
   ],
-  "runArgs": [
-    "--network=develop-network"
-  ],
+  "runArgs": ["--network=develop-network"],
   "customizations": {
     "vscode": {
-      "settings": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "rubyLsp.formatter": "none"
-      },
       "extensions": [
-        "esbenp.prettier-vscode",
         "janisdd.vscode-edit-csv",
         "KoichiSasada.vscode-rdbg",
         "mhutchie.git-graph",
