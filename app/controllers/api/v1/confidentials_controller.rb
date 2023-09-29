@@ -41,7 +41,6 @@ class Api::V1::ConfidentialsController < ApplicationController
       :password,
       :other,
       :created_at,
-      :updated_at
     )
   end
 end

@@ -1,6 +1,6 @@
 class Api::V1::CarsController < ApplicationController
   def index
-    cars = Car.order(:created_at)
+    cars = Car.order(:name)
     render json: cars
   end
 
