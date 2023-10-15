@@ -33,6 +33,7 @@ class Api::V1::TaskListsController < ApplicationController
     params.require(:task_list).permit(
       :id,
       :name,
+      :seq
     )
   end
 end
