@@ -8,7 +8,7 @@ module FirebaseAuthenticator
   ISSUER_URI_BASE = "https://securetoken.google.com/".freeze
   CERTS_URI = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com".freeze
   CERTS_CACHE_KEY = "firebase_auth_certificates"
-  PROJECT_ID = "ynym-portal-25b29"
+  PROJECT_ID = "ynym-portal-9a97e"
 
   def decode(token)
     options = {
