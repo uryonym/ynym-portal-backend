@@ -16,3 +16,14 @@ group :development, :test do
   gem "debug", platforms: %i[ mri mingw x64_mingw ]
   gem "faker", :require => false
 end
+
+group :development do
+  gem "rubocop"
+  gem "rubocop-performance"
+  gem "rubocop-rails"
+  gem "rubocop-rspec"
+  gem "syntax_tree"
+  gem "syntax_tree-haml"
+  gem "syntax_tree-rbs"
+  gem "web-console"
+end

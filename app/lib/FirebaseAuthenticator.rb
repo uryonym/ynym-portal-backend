@@ -2,11 +2,13 @@ require "jwt"
 require "net/http"
 
 module FirebaseAuthenticator
-  class InvalidTokenError < StandardError; end
+  class InvalidTokenError < StandardError
+  end
 
   ALGORITHM = "RS256".freeze
   ISSUER_URI_BASE = "https://securetoken.google.com/".freeze
-  CERTS_URI = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com".freeze
+  CERTS_URI =
+    "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com".freeze
   CERTS_CACHE_KEY = "firebase_auth_certificates"
   PROJECT_ID = "ynym-portal-9a97e"
 
@@ -17,19 +19,18 @@ module FirebaseAuthenticator
       verify_iss: true,
       aud: PROJECT_ID,
       verify_aud: true,
-      verify_iat: false,
+      verify_iat: false
     }
 
-    payload, _ = JWT.decode(token, nil, true, options) do |header|
-      cert = fetch_certificates[header["kid"]]
-      if cert.present?
-        OpenSSL::X509::Certificate.new(cert).public_key
-      else
-        nil
+    payload, _ =
+      JWT.decode(token, nil, true, options) do |header|
+        cert = fetch_certificates[header["kid"]]
+        cert.present? ? OpenSSL::X509::Certificate.new(cert).public_key : nil
       end
-    end
 
-    raise InvalidTokenError.new("Invalid auth_time") unless Time.zone.at(payload["auth_time"]).past?
+    unless Time.zone.at(payload["auth_time"]).past?
+      raise InvalidTokenError.new("Invalid auth_time")
+    end
     raise InvalidTokenError.new("Invalid sub") if payload["sub"].empty?
 
     payload
@@ -51,7 +52,11 @@ module FirebaseAuthenticator
 
     body = JSON.parse(res.body)
     expires_at = Time.zone.parse(res.header["expires"])
-    Rails.cache.write(CERTS_CACHE_KEY, body, expires_in: expires_at - Time.current)
+    Rails.cache.write(
+      CERTS_CACHE_KEY,
+      body,
+      expires_in: expires_at - Time.current
+    )
 
     body
   end
