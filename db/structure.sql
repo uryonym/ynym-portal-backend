@@ -77,8 +77,26 @@ CREATE TABLE public.confidentials (
 
 CREATE TABLE public.notes (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    uid character varying NOT NULL,
+    seq integer NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: pages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.pages (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     title character varying NOT NULL,
     content character varying NOT NULL,
+    uid character varying NOT NULL,
+    seq integer NOT NULL,
+    note_id uuid NOT NULL,
+    section_id uuid NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
@@ -109,6 +127,21 @@ CREATE TABLE public.refuelings (
 
 CREATE TABLE public.schema_migrations (
     version character varying NOT NULL
+);
+
+
+--
+-- Name: sections; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sections (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying NOT NULL,
+    uid character varying NOT NULL,
+    seq integer NOT NULL,
+    note_id uuid NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -190,6 +223,14 @@ ALTER TABLE ONLY public.notes
 
 
 --
+-- Name: pages pages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pages
+    ADD CONSTRAINT pages_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: refuelings refuelings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -203,6 +244,14 @@ ALTER TABLE ONLY public.refuelings
 
 ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: sections sections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sections
+    ADD CONSTRAINT sections_pkey PRIMARY KEY (id);
 
 
 --
@@ -230,6 +279,27 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: index_notes_on_uid_and_seq; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_notes_on_uid_and_seq ON public.notes USING btree (uid, seq);
+
+
+--
+-- Name: index_pages_on_section_id_and_seq; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_pages_on_section_id_and_seq ON public.pages USING btree (section_id, seq);
+
+
+--
+-- Name: index_sections_on_note_id_and_seq; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_sections_on_note_id_and_seq ON public.sections USING btree (note_id, seq);
+
+
+--
 -- Name: index_task_lists_on_uid_and_seq; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -250,6 +320,8 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20230712052730'),
 ('20230803130836'),
 ('20230821113023'),
-('20230906054400');
+('20230906054400'),
+('20240106070000'),
+('20240106070100');
 
 

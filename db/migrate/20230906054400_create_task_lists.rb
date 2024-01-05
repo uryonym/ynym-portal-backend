@@ -8,6 +8,6 @@ class CreateTaskLists < ActiveRecord::Migration[7.0]
       t.timestamps
     end
 
-    add_index :task_lists, [:uid, :seq], unique: true
+    add_index :task_lists, %i[uid seq], unique: true
   end
 end
