@@ -4,6 +4,9 @@ class Page < ApplicationRecord
   validates :content, presence: true
   validates :uid, presence: true
   validates :seq, presence: true
-  validates :note_id, presence: true
-  validates :section_id, presence: true
+
+  # アソシエーション
+  belongs_to :user, primary_key: :uid, foreign_key: :uid
+  belongs_to :note
+  belongs_to :section
 end
