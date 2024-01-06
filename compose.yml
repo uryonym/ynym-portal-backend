@@ -7,8 +7,8 @@ services:
     command: /bin/bash -c "rm -f tmp/pids/server.pid && bundle exec rails s"
     restart: always
     environment:
-      TZ: Asia/Tokyo
-      RAILS_ENV: production
+      - TZ=Asia/Tokyo
+      - RAILS_ENV=production
     volumes:
       - ./log:/app/log
       - /etc/letsencrypt:/etc/letsencrypt
