@@ -2,9 +2,9 @@ default: &default
   adapter: postgresql
   encoding: utf8
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  host: dev-postgres
-  username: uryonym
-  password: uryonym
+  host: <%= ENV['DB_HOST'] %>
+  username: <%= ENV['DB_USER'] %>
+  password: <%= ENV['DB_PASS'] %>
 
 development:
   <<: *default
@@ -14,5 +14,4 @@ test:
   database: ynym_portal_test
 production:
   <<: *default
-  host: ynym-portal-db
   database: ynym_portal
