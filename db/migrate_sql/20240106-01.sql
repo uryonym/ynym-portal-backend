@@ -10,12 +10,15 @@ drop table notes;
 -- テーブルの作成
 create table notes (
   id uuid default gen_random_uuid() not null,
-  title character varying not null,
+  name character varying not null,
   uid character varying not null,
   seq integer NOT NULL,
   created_at timestamp(6) without time zone not null,
   updated_at timestamp(6) without time zone not null
 );
+ALTER TABLE ONLY public.notes
+    ADD CONSTRAINT notes_pkey PRIMARY KEY (id);
+CREATE UNIQUE INDEX index_notes_on_uid_and_seq ON public.notes USING btree (uid, seq);
 
 -- データの戻し
 insert into notes
