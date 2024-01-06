@@ -7,6 +7,8 @@ Rails.application.routes.draw do
       resources :cars
       resources :refuelings
       resources :notes
+      resources :sections
+      resources :pages
     end
   end
 end

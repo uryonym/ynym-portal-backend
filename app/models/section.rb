@@ -7,5 +7,5 @@ class Section < ApplicationRecord
   # アソシエーション
   belongs_to :user, primary_key: :uid, foreign_key: :uid
   belongs_to :note
-  has_many :pages
+  has_many :pages, -> { order :seq }
 end

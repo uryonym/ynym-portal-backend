@@ -2,7 +2,7 @@ class Api::V1::NotesController < ApplicationController
   skip_before_action :authenticate_token
 
   def index
-    notes = Note.order(:created_at)
+    notes = Note.order(:seq)
     render json: notes
   end
 
@@ -36,12 +36,6 @@ class Api::V1::NotesController < ApplicationController
   end
 
   private def note_params
-    params.require(:note).permit(
-      :id,
-      :title,
-      :content,
-      :created_at,
-      :updated_at
-    )
+    params.require(:note).permit(:id, :name, :uid, :seq)
   end
 end
