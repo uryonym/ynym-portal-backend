@@ -9,7 +9,7 @@ class Api::V1::NotesController < ApplicationController
   def create
     note = Note.new(note_params)
     note.uid = 'MhpgUUWTcAMTpI1zvTcKRJlxysk1'
-    note.seq = Note.maximum(:seq).next
+    note.seq = Note.maximum(:seq).next || 1
     if note.save
       render json: note
     else
