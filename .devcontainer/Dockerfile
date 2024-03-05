@@ -1,18 +1,16 @@
-#
-# Ruby環境用ビルド
-#
-FROM ruby:3.2.2-bullseye
+ARG RUBY_VERSION=3.2.2
+
+FROM ruby:${RUBY_VERSION}-slim as base
 
 # 環境変数設定
-ENV LANG=C.UTF-8 TZ=Asia/Tokyo
+ENV LANG="C.UTF-8" \
+    TZ="Asia/Tokyo" \
+    RAILS_ENV="development" \
+    BUNDLE_DEPLOYMENT="1" \
+    BUNDLE_PATH="/usr/local/bundle"
 
-# パッケージ更新、脆弱性パッケージの削除
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-  && apt-get purge -y imagemagick imagemagick-6-common \
-  && apt-get install -y lsb-release
+FROM base as build
 
-# PostgreSQLクライアントのインストール
-RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-  && echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list \
-  && apt-get update && export DEBIAN_FRONTEND=noninteractive \
-  && apt-get install -y postgresql-client-14
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y build-essential git libpq-dev \
+      libvips pkg-config curl libvips postgresql-client

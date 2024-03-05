@@ -23,13 +23,21 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "rubyLsp.formatter": "syntax_tree"
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "rubyLsp.formatter": "syntax_tree",
+        "prettier.singleQuote": true,
+        "prettier.semi": false,
+        "prettier.trailingComma": "all",
+        "prettier.printWidth": 80,
+        "[ruby]": {
+          "editor.defaultFormatter": "Shopify.ruby-lsp"
+        }
       },
       "extensions": [
         "janisdd.vscode-edit-csv",
-        "KoichiSasada.vscode-rdbg",
         "mhutchie.git-graph",
-        "Shopify.ruby-lsp"
+        "Shopify.ruby-lsp",
+        "esbenp.prettier-vscode"
       ]
     }
   },
