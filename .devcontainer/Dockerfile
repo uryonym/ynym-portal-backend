@@ -1,16 +1,9 @@
-ARG RUBY_VERSION=3.2.2
+ARG RUBY_VERSION=3.2.2-bookworm
 
-FROM ruby:${RUBY_VERSION}-slim as base
-
-# 環境変数設定
-ENV LANG="C.UTF-8" \
-    TZ="Asia/Tokyo" \
-    RAILS_ENV="development" \
-    BUNDLE_DEPLOYMENT="1" \
-    BUNDLE_PATH="/usr/local/bundle"
-
-FROM base as build
+FROM ruby:${RUBY_VERSION}
 
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libpq-dev \
-      libvips pkg-config curl libvips postgresql-client
+    export DEBIAN_FRONTEND=noninteractive && \
+    # Remove imagemagick due to https://security-tracker.debian.org/tracker/CVE-2019-10131
+    apt-get purge -y imagemagick imagemagick-6-common && \
+    apt-get install --no-install-recommends -y libvips ffmpeg poppler-utils postgresql-client

@@ -1,34 +1,33 @@
 {
   "name": "ynym-portal-backend",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".."
+  "dockerComposeFile": "compose.yaml",
+  "service": "rails-app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "forwardPorts": [3000],
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "initialZsh": "true",
+      "username": "vscode",
+      "userUid": "1000",
+      "userGid": "1000",
+      "upgradePackages": "true"
+    },
+    "ghcr.io/devcontainers/features/ruby:1": "none",
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest",
+      "ppa": "false"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "forwardPorts": [
-    3000,
-    5000
-  ],
-  "workspaceFolder": "/app",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
-  "mounts": [
-    {
-      "source": "ynym-portal-backend-volume",
-      "target": "/usr/local/bundle",
-      "type": "volume"
-    }
-  ],
-  "runArgs": [
-    "--network=develop-network"
-  ],
   "customizations": {
     "vscode": {
       "settings": {
         "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "rubyLsp.formatter": "syntax_tree",
         "prettier.singleQuote": true,
         "prettier.semi": false,
         "prettier.trailingComma": "all",
         "prettier.printWidth": 80,
+        "rubyLsp.formatter": "syntax_tree",
         "[ruby]": {
           "editor.defaultFormatter": "Shopify.ruby-lsp"
         }
@@ -39,15 +38,6 @@
         "Shopify.ruby-lsp",
         "esbenp.prettier-vscode"
       ]
-    }
-  },
-  "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "initialZsh": "true",
-      "username": "vscode",
-      "userUid": "1000",
-      "userGid": "1000",
-      "upgradePackages": "true"
     }
   },
   "remoteUser": "vscode",
