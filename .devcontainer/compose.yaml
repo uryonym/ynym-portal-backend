@@ -1,0 +1,23 @@
+services:
+  rails-app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    command: sleep infinity
+    environment:
+      - LANG=C.UTF-8
+      - TZ=Asia/Tokyo
+      - RAILS_ENV=development
+    volumes:
+      - ../..:/workspaces:cachd
+      - ynym-portal-backend-bundle-volume:/usr/local/bundle
+
+volumes:
+  ynym-portal-backend-bundle-volume:
+    name: ynym-portal-backend-bundle-volume
+    driver: local
+
+networks:
+  default:
+    name: develop-network
+    external: true

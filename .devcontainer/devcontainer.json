@@ -1,38 +1,9 @@
 {
   "name": "ynym-portal-backend",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".."
-  },
-  "forwardPorts": [
-    3000,
-    5000
-  ],
-  "workspaceFolder": "/app",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
-  "mounts": [
-    {
-      "source": "ynym-portal-backend-volume",
-      "target": "/usr/local/bundle",
-      "type": "volume"
-    }
-  ],
-  "runArgs": [
-    "--network=develop-network"
-  ],
-  "customizations": {
-    "vscode": {
-      "settings": {
-        "rubyLsp.formatter": "syntax_tree"
-      },
-      "extensions": [
-        "janisdd.vscode-edit-csv",
-        "KoichiSasada.vscode-rdbg",
-        "mhutchie.git-graph",
-        "Shopify.ruby-lsp"
-      ]
-    }
-  },
+  "dockerComposeFile": "compose.yaml",
+  "service": "rails-app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "forwardPorts": [3000],
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {
       "initialZsh": "true",
@@ -40,6 +11,32 @@
       "userUid": "1000",
       "userGid": "1000",
       "upgradePackages": "true"
+    },
+    "ghcr.io/devcontainers/features/ruby:1": "none",
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest",
+      "ppa": "false"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "prettier.singleQuote": true,
+        "prettier.semi": false,
+        "prettier.trailingComma": "all",
+        "prettier.printWidth": 80,
+        "[ruby]": {
+          "editor.defaultFormatter": "Shopify.ruby-lsp"
+        }
+      },
+      "extensions": [
+        "janisdd.vscode-edit-csv",
+        "mhutchie.git-graph",
+        "Shopify.ruby-lsp",
+        "esbenp.prettier-vscode"
+      ]
     }
   },
   "remoteUser": "vscode",

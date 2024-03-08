@@ -31,7 +31,7 @@ Style/AccessModifierDeclarations:
 # １行の最大文字数
 # prettierに合わせて100文字とする
 Layout/LineLength:
-  Max: 100
+  Max: 80
 
 # １メソッド内の最大行数
 Metrics/MethodLength:
