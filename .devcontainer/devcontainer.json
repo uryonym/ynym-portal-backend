@@ -27,7 +27,6 @@
         "prettier.semi": false,
         "prettier.trailingComma": "all",
         "prettier.printWidth": 80,
-        "rubyLsp.formatter": "syntax_tree",
         "[ruby]": {
           "editor.defaultFormatter": "Shopify.ruby-lsp"
         }
