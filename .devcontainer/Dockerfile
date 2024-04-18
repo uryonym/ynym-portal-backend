@@ -1,4 +1,4 @@
-ARG RUBY_VERSION=3.2.3-bookworm
+ARG RUBY_VERSION=3.3.0-bookworm
 
 FROM ruby:${RUBY_VERSION}
 
