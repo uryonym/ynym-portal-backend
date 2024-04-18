@@ -138,8 +138,8 @@ CREATE TABLE public.sections (
 CREATE TABLE public.task_lists (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     name character varying NOT NULL,
-    uid character varying NOT NULL,
     seq integer NOT NULL,
+    uid character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
@@ -286,10 +286,10 @@ CREATE UNIQUE INDEX index_sections_on_note_id_and_seq ON public.sections USING b
 
 
 --
--- Name: index_task_lists_on_uid_and_seq; Type: INDEX; Schema: public; Owner: -
+-- Name: index_task_lists_on_seq_and_uid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_task_lists_on_uid_and_seq ON public.task_lists USING btree (uid, seq);
+CREATE UNIQUE INDEX index_task_lists_on_seq_and_uid ON public.task_lists USING btree (seq, uid);
 
 
 --
@@ -299,15 +299,17 @@ CREATE UNIQUE INDEX index_task_lists_on_uid_and_seq ON public.task_lists USING b
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20220813135920'),
-('20220919113927'),
-('20221213140519'),
-('20221213142409'),
-('20230712052730'),
-('20230803130836'),
-('20230821113023'),
-('20230906054400'),
+('20240418142860'),
+('20240418142859'),
+('20240418142858'),
+('20240106070100'),
 ('20240106070000'),
-('20240106070100');
-
+('20230906054400'),
+('20230821113023'),
+('20230803130836'),
+('20230712052730'),
+('20221213142409'),
+('20221213140519'),
+('20220919113927'),
+('20220813135920');
 
