@@ -10,7 +10,7 @@ class Api::V1::TaskListsController < ApplicationController
     if task_list.save
       render json: task_list
     else
-      render json: task_list.errors
+      render json: task_list.errors, status: :unprocessable_entity
     end
   end
 
@@ -19,13 +19,13 @@ class Api::V1::TaskListsController < ApplicationController
     if task_list.update(task_list_params)
       render json: task_list
     else
-      render json: task_list.errors
+      render json: task_list.errors, status: :unprocessable_entity
     end
   end
 
   def destroy
     task_list = TaskList.find(params[:id])
-    task_list.destroy
+    task_list.destroy!
     render json: task_list
   end
 
