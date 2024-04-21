@@ -1,21 +1,17 @@
 class Api::V1::CarsController < ApplicationController
   def index
-    cars = Car.order(:name)
+    cars = Car.where(uid: @current_user.uid).order(:seq)
     render json: cars
   end
 
   def create
     car = Car.new(car_params)
+    car.uid = @current_user.uid
     if car.save
       render json: car
     else
-      render json: car.errors
+      render json: car.errors, status: :unprocessable_entity
     end
-  end
-
-  def show
-    car = Car.find(params[:id])
-    render json: car
   end
 
   def update
@@ -23,13 +19,13 @@ class Api::V1::CarsController < ApplicationController
     if car.update(car_params)
       render json: car
     else
-      render json: car.errors
+      render json: car.errors, status: :unprocessable_entity
     end
   end
 
   def destroy
     car = Car.find(params[:id])
-    car.destroy
+    car.destroy!
     render json: car
   end
 
@@ -37,6 +33,7 @@ class Api::V1::CarsController < ApplicationController
     params.require(:car).permit(
       :id,
       :name,
+      :seq,
       :maker,
       :model,
       :model_year,
