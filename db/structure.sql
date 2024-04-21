@@ -101,8 +101,9 @@ CREATE TABLE public.refuelings (
     fuel_type character varying NOT NULL,
     price integer NOT NULL,
     total_cost integer NOT NULL,
-    full_flag boolean DEFAULT true NOT NULL,
+    is_full boolean DEFAULT true NOT NULL,
     gas_stand character varying NOT NULL,
+    uid character varying NOT NULL,
     car_id uuid NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL

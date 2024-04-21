@@ -10,7 +10,7 @@ class Api::V1::TasksController < ApplicationController
     if task.save
       render json: task
     else
-      render json: task.errors
+      render json: task.errors, status: :unprocessable_entity
     end
   end
 
@@ -24,13 +24,13 @@ class Api::V1::TasksController < ApplicationController
     if task.update(task_params)
       render json: task
     else
-      render json: task.errors
+      render json: task.errors, status: :unprocessable_entity
     end
   end
 
   def destroy
     task = Task.find(params[:id])
-    task.destroy
+    task.destroy!
     render json: task
   end
 

@@ -9,7 +9,7 @@ class Api::V1::RefuelingsController < ApplicationController
     if refueling.save
       render json: refueling
     else
-      render json: refueling.errors
+      render json: refueling.errors, status: :unprocessable_entity
     end
   end
 
@@ -23,13 +23,13 @@ class Api::V1::RefuelingsController < ApplicationController
     if refueling.update(refueling_params)
       render json: refueling
     else
-      render json: refueling.errors
+      render json: refueling.errors, status: :unprocessable_entity
     end
   end
 
   def destroy
     refueling = Refueling.find(params[:id])
-    refueling.destroy
+    refueling.destroy!
     render json: refueling
   end
 
@@ -41,7 +41,7 @@ class Api::V1::RefuelingsController < ApplicationController
       :fuel_type,
       :price,
       :total_cost,
-      :full_flag,
+      :is_full,
       :gas_stand,
       :car_id
     )

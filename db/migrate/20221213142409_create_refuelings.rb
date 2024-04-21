@@ -5,9 +5,10 @@ class CreateRefuelings < ActiveRecord::Migration[7.0]
       t.integer :odometer, null: false
       t.string :fuel_type, null: false
       t.integer :price, null: false
-      t.integer :quantity, null: false
-      t.boolean :full_flag, null: false, default: true
+      t.integer :total_cost, null: false
+      t.boolean :is_full, null: false, default: true
       t.string :gas_stand, null: false
+      t.string :uid, null: false
       t.uuid :car_id, null: false
 
       t.timestamps
