@@ -1,11 +1,12 @@
 class Api::V1::RefuelingsController < ApplicationController
   def index
-    refuelings = Refueling.order(refuel_datetime: :desc)
+    refuelings = Refueling.where(uid: @current_user.uid).order(refuel_datetime: :desc)
     render json: refuelings
   end
 
   def create
     refueling = Refueling.new(refueling_params)
+    refueling.uid = @current_user.uid
     if refueling.save
       render json: refueling
     else
