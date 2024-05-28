@@ -1,7 +1,7 @@
 #
 # Rubyベース用ビルド
 #
-FROM ruby:3.3.0 AS ruby-base
+FROM ruby:3.3.1 AS ruby-base
 WORKDIR /app
 ENV BUNDLE_PATH vendor/bundle
 
