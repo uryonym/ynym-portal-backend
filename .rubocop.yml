@@ -1,10 +1,13 @@
+inherit_gem:
+  rubocop-shopify: rubocop.yml
+
 require:
   - rubocop-performance
   - rubocop-rails
   - rubocop-rspec
 
 AllCops:
-  TargetRubyVersion: 3.2
+  TargetRubyVersion: 3.3
   NewCops: disable
   Exclude:
     - bin/**/*
@@ -12,38 +15,3 @@ AllCops:
     - db/schema.rb
     - db/migrate/*
     - vendor/**/*
-
-# 不要なselfを検出
-# コードの見た目上、selfが無いと見分けづらいため、無効にする
-Style/RedundantSelf:
-  Enabled: false
-
-# class, moduleファイルの先頭にドキュメント記述があるかをチェック
-# ドキュメントの記述は不要のため、無効にする
-Style/Documentation:
-  Enabled: false
-
-# メソッドに付与するprivateのつけ方に関するルール
-# 各メソッドごとに付与する方針とする
-Style/AccessModifierDeclarations:
-  EnforcedStyle: inline
-
-# １行の最大文字数
-# prettierに合わせて100文字とする
-Layout/LineLength:
-  Max: 80
-
-# １メソッド内の最大行数
-Metrics/MethodLength:
-  Max: 100
-
-# １ブロック内の最大行数
-Metrics/BlockLength:
-  Max: 50
-
-# １クラス内の最大行数
-Metrics/ClassLength:
-  Max: 500
-
-Metrics/AbcSize:
-  Enabled: false
