@@ -1,6 +1,6 @@
 {
   "name": "ynym-portal-backend",
-  "dockerComposeFile": "compose.yaml",
+  "dockerComposeFile": "compose.yml",
   "service": "rails-app",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "forwardPorts": [3000],
