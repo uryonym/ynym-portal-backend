@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 class ApplicationController < ActionController::API
-  include FirebaseAuthenticator
+  include SupabaseAuthenticator
   before_action :authenticate_token
 
   class AuthenticationError < StandardError; end
@@ -7,8 +9,8 @@ class ApplicationController < ActionController::API
 
   def authenticate_token
     payload = decode(request.headers["Authorization"]&.split&.last)
-    puts(payload)
-    raise AuthenticationError unless current_user(payload["user_id"])
+    raise AuthenticationError unless payload
+    raise AuthenticationError unless current_user(payload["sub"])
   end
 
   def current_user(user_id = nil)
@@ -16,6 +18,6 @@ class ApplicationController < ActionController::API
   end
 
   private def not_authenticated
-    render json: { error: {messages: ["ログインしてください"] } }, status: :unauchorized
+    render(json: { error: { messages: ["ログインしてください"] } }, status: :unauthorized)
   end
 end
