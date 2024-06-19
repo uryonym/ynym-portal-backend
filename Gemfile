@@ -12,7 +12,7 @@ gem "jwt"
 gem "pg", "~> 1.1"
 gem "puma"
 gem "rack-cors"
-gem "rails", "7.1.3.3"
+gem "rails", "7.1.3.4"
 gem "tzinfo-data", platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
 group :development, :test do
