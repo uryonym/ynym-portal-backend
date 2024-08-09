@@ -1,4 +1,19 @@
 services:
+  ynym-portal-gateway:
+    image: steveltn/https-portal:1.24.0
+    container_name: ynym-portal-gateway
+    hostname: ynym-portal-gateway
+    restart: always
+    environment:
+      - STAGE=production
+      - DOMAINS="api-portal.uryonym.com -> http://ynym-portal-backend:3000"
+    ports:
+      - 443:443
+    depends_on:
+      - ynym-portal-backend
+    volumes:
+      - ynym-portal-gateway-volume:/var/lib/https-portal
+
   ynym-portal-backend:
     build: .
     image: ynym-portal-backend
@@ -11,14 +26,8 @@ services:
       - RAILS_ENV=production
     volumes:
       - ./log:/app/log
-      - /etc/letsencrypt:/etc/letsencrypt
-    networks:
-      - default
-      - proxy-network
 
 networks:
   default:
     name: ynym-portal-network
-    external: true
-  proxy-network:
     external: true
