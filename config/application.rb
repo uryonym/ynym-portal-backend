@@ -31,5 +31,8 @@ module YnymPortalBackend
     config.time_zone = 'Tokyo'
     config.active_record.default_timezone = :local
     config.active_record.schema_format = :sql
+
+    # ActiveModelSerializer Settings
+    ActiveModelSerializers.config.key_transform = :camel_lower
   end
 end
