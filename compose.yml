@@ -5,9 +5,10 @@ services:
     hostname: ynym-portal-gateway
     restart: always
     environment:
-      - STAGE=production
-      - DOMAINS="api-portal.uryonym.com -> http://ynym-portal-backend:3000"
+      # - STAGE=production
+      - DOMAINS=api-portal.uryonym.com -> http://ynym-portal-backend:3000
     ports:
+      - 80:80
       - 443:443
     depends_on:
       - ynym-portal-backend
@@ -24,6 +25,7 @@ services:
     environment:
       - TZ=Asia/Tokyo
       - RAILS_ENV=production
+      - SECRET_KEY_BASE=1b5aec3f3ed8d557041d436ad3d4c8b31f0d9d6f66e4dcfa77b6a20b2a59e689533c8099389506b1a372ecbac7a1ba1589a76477c1a47b67cf770f33ff22656e
     volumes:
       - ./log:/app/log
 
