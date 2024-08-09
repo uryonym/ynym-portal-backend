@@ -27,6 +27,11 @@ services:
     volumes:
       - ./log:/app/log
 
+volumes:
+  ynym-portal-gateway-volume:
+    name: ynym-portal-gateway-volume
+    driver: local
+
 networks:
   default:
     name: ynym-portal-network
