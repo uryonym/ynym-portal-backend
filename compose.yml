@@ -6,7 +6,7 @@ services:
     restart: always
     environment:
       - STAGE=production
-      - DOMAINS=api-portal.uryonym.com -> http://ynym-portal-backend:3000
+      - DOMAINS=portal-api.uryonym.com -> http://ynym-portal-backend:3000
     ports:
       - 80:80
       - 443:443
