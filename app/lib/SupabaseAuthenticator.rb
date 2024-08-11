@@ -6,7 +6,7 @@ module SupabaseAuthenticator
   ISS_URL = "https://pcwmuaduiowvznblzoqf.supabase.co/auth/v1"
 
   def decode(token)
-    secret = "YTEYxpLtQTbqXqKCAm2lnLrsipgf2O6fbSVwgRHgo2aakajxQtbmaXoBY0NZYlB+WmfWKmKEacfi6GyOGXNDDA=="
+    secret = ENV["SUPABASE_JWT_SECRET"]
     decode_token, _ = JWT.decode(token, secret, true, { iss: ISS_URL })
     decode_token
   end
