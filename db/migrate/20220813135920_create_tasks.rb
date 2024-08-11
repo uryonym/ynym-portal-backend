@@ -6,7 +6,6 @@ class CreateTasks < ActiveRecord::Migration[7.0]
       t.date :dead_line
       t.boolean :is_complete, null: false, default: false
       t.string :uid, null: false
-      t.uuid :task_list_id, null: false
 
       t.timestamps
     end

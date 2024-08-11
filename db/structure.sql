@@ -135,20 +135,6 @@ CREATE TABLE public.sections (
 
 
 --
--- Name: task_lists; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.task_lists (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name character varying NOT NULL,
-    seq integer NOT NULL,
-    uid character varying NOT NULL,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
-);
-
-
---
 -- Name: tasks; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -159,7 +145,6 @@ CREATE TABLE public.tasks (
     dead_line date,
     is_complete boolean DEFAULT false NOT NULL,
     uid character varying NOT NULL,
-    task_list_id uuid NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
@@ -244,14 +229,6 @@ ALTER TABLE ONLY public.sections
 
 
 --
--- Name: task_lists task_lists_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.task_lists
-    ADD CONSTRAINT task_lists_pkey PRIMARY KEY (id);
-
-
---
 -- Name: tasks tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -293,13 +270,6 @@ CREATE UNIQUE INDEX index_pages_on_section_id_and_seq ON public.pages USING btre
 --
 
 CREATE UNIQUE INDEX index_sections_on_note_id_and_seq ON public.sections USING btree (note_id, seq);
-
-
---
--- Name: index_task_lists_on_seq_and_uid; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_task_lists_on_seq_and_uid ON public.task_lists USING btree (seq, uid);
 
 
 --

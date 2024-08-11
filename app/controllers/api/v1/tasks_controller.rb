@@ -43,7 +43,6 @@ class Api::V1::TasksController < ApplicationController
       :description,
       :dead_line,
       :is_complete,
-      :task_list_id,
     )
   end
 end
