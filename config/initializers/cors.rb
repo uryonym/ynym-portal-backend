@@ -7,7 +7,7 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins "localhost:5000", "localhost:5173", "portal.uryonym.com", "ynym-note.vercel.app"
+    origins "localhost:5173", "portal.uryonym.com", "ynym-portal-frontend.vercel.app"
 
     resource "*",
       headers: :any,
