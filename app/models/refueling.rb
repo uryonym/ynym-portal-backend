@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Refueling < ApplicationRecord
   # バリデーション
   validates :refuel_datetime, presence: true
