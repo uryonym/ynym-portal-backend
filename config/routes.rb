@@ -3,8 +3,9 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :tasks
       resources :confidentials
-      resources :cars
-      resources :refuelings
+      resources :cars do
+        resources :refuelings
+      end
       resources :notes
       resources :sections
       resources :pages
