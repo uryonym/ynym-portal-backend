@@ -9,6 +9,13 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -66,8 +73,8 @@ CREATE TABLE public.confidentials (
 CREATE TABLE public.notes (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     name character varying NOT NULL,
-    uid character varying NOT NULL,
     seq integer NOT NULL,
+    uid character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
@@ -81,9 +88,7 @@ CREATE TABLE public.pages (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     title character varying NOT NULL,
     content character varying NOT NULL,
-    uid character varying NOT NULL,
     seq integer NOT NULL,
-    note_id uuid NOT NULL,
     section_id uuid NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
@@ -126,7 +131,6 @@ CREATE TABLE public.schema_migrations (
 CREATE TABLE public.sections (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     name character varying NOT NULL,
-    uid character varying NOT NULL,
     seq integer NOT NULL,
     note_id uuid NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
@@ -173,19 +177,19 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 
 --
+-- Name: confidentials auth_infos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.confidentials
+    ADD CONSTRAINT auth_infos_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: cars cars_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.cars
     ADD CONSTRAINT cars_pkey PRIMARY KEY (id);
-
-
---
--- Name: confidentials confidentials_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.confidentials
-    ADD CONSTRAINT confidentials_pkey PRIMARY KEY (id);
 
 
 --
@@ -252,24 +256,24 @@ CREATE UNIQUE INDEX index_cars_on_seq_and_uid ON public.cars USING btree (seq, u
 
 
 --
--- Name: index_notes_on_uid_and_seq; Type: INDEX; Schema: public; Owner: -
+-- Name: index_notes_on_seq_and_uid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_notes_on_uid_and_seq ON public.notes USING btree (uid, seq);
-
-
---
--- Name: index_pages_on_section_id_and_seq; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_pages_on_section_id_and_seq ON public.pages USING btree (section_id, seq);
+CREATE UNIQUE INDEX index_notes_on_seq_and_uid ON public.notes USING btree (seq, uid);
 
 
 --
--- Name: index_sections_on_note_id_and_seq; Type: INDEX; Schema: public; Owner: -
+-- Name: index_pages_on_seq_and_section_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_sections_on_note_id_and_seq ON public.sections USING btree (note_id, seq);
+CREATE UNIQUE INDEX index_pages_on_seq_and_section_id ON public.pages USING btree (seq, section_id);
+
+
+--
+-- Name: index_sections_on_seq_and_note_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_sections_on_seq_and_note_id ON public.sections USING btree (seq, note_id);
 
 
 --
