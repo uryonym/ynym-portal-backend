@@ -4,16 +4,17 @@ class Api::V1::PagesController < ApplicationController
   skip_before_action :authenticate_token
 
   def index
-    pages = Page.order(:seq)
+    pages = Page.where(section_id: params[:section_id]).order(:seq)
     render(json: pages)
   end
 
   def create
     page = Page.new(page_params)
+    page.section_id = params[:section_id]
     if page.save
       render(json: page)
     else
-      render(json: page.errors)
+      render(json: page.errors, status: :unprocessable_entity)
     end
   end
 
@@ -27,7 +28,7 @@ class Api::V1::PagesController < ApplicationController
     if page.update(page_params)
       render(json: page)
     else
-      render(json: page.errors)
+      render(json: page.errors, status: :unprocessable_entity)
     end
   end
 
@@ -38,6 +39,6 @@ class Api::V1::PagesController < ApplicationController
   end
 
   private def page_params
-    params.require(:page).permit(:id, :title, :content, :uid, :seq, :section_id)
+    params.require(:page).permit(:id, :title, :content, :seq)
   end
 end
