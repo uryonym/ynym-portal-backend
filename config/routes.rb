@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
@@ -6,9 +8,11 @@ Rails.application.routes.draw do
       resources :cars do
         resources :refuelings
       end
-      resources :notes
-      resources :sections
-      resources :pages
+      resources :notes do
+        resources :sections do
+          resources :pages
+        end
+      end
     end
   end
 end
