@@ -1,21 +1,18 @@
 # frozen_string_literal: true
 
 class Api::V1::NotesController < ApplicationController
-  skip_before_action :authenticate_token
-
   def index
-    notes = Note.order(:seq)
+    notes = Note.where(uid: @current_user.uid).order(:seq)
     render(json: notes)
   end
 
   def create
     note = Note.new(note_params)
-    note.uid = "MhpgUUWTcAMTpI1zvTcKRJlxysk1"
-    note.seq = Note.maximum(:seq)&.next || 1
+    note.uid = @current_user.uid
     if note.save
       render(json: note)
     else
-      render(json: note.errors)
+      render(json: note.errors, status: :unprocessable_entity)
     end
   end
 
@@ -29,7 +26,7 @@ class Api::V1::NotesController < ApplicationController
     if note.update(note_params)
       render(json: note)
     else
-      render(json: note.errors)
+      render(json: note.errors, status: :unprocessable_entity)
     end
   end
 
@@ -40,6 +37,6 @@ class Api::V1::NotesController < ApplicationController
   end
 
   private def note_params
-    params.require(:note).permit(:id, :name, :uid, :seq)
+    params.require(:note).permit(:id, :name, :seq)
   end
 end
