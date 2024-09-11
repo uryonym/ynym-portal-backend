@@ -1,3 +1,5 @@
+name: "ynym-portal-backend"
+
 services:
   rails-app:
     build:
@@ -10,12 +12,6 @@ services:
       - RAILS_ENV=development
     volumes:
       - ../..:/workspaces:cachd
-      - ynym-portal-backend-bundle-volume:/usr/local/bundle
-
-volumes:
-  ynym-portal-backend-bundle-volume:
-    name: ynym-portal-backend-bundle-volume
-    driver: local
 
 networks:
   default:
