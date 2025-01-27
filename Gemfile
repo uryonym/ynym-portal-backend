@@ -3,7 +3,7 @@
 source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby "3.3.5"
+ruby "3.3.7"
 
 gem "active_model_serializers"
 gem "bootsnap", require: false
@@ -12,7 +12,7 @@ gem "jwt"
 gem "pg", "~> 1.1"
 gem "puma"
 gem "rack-cors"
-gem "rails", "7.2.1"
+gem "rails", "7.2.2.1"
 gem "tzinfo-data", platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
 group :development, :test do

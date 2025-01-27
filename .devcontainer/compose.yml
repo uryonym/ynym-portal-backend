@@ -10,10 +10,12 @@ services:
       - LANG=C.UTF-8
       - TZ=Asia/Tokyo
       - RAILS_ENV=development
+    ports:
+      - 3000:3000
     volumes:
       - ../..:/workspaces:cachd
 
 networks:
   default:
-    name: develop-network
+    name: ynym-portal-network
     external: true
