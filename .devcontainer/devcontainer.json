@@ -24,6 +24,7 @@
       "extensions": [
         "janisdd.vscode-edit-csv",
         "mhutchie.git-graph",
+        "Gxl.git-graph-311j",
         "Shopify.ruby-lsp",
         "esbenp.prettier-vscode",
         "ms-azuretools.vscode-docker"
