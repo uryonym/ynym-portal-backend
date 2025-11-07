@@ -1,1 +1,1 @@
-"""Utility functions package."""
+"""ユーティリティ関数パッケージ."""

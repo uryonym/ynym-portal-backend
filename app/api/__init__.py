@@ -1,1 +1,1 @@
-"""API module package."""
+"""API モジュールパッケージ."""

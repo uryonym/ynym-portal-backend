@@ -1,18 +1,18 @@
-"""Base schemas for common response structures."""
+"""共通レスポンス構造のベーススキーマ."""
 
 from pydantic import BaseModel
 from typing import Any, Optional
 
 
 class SuccessResponse(BaseModel):
-    """Standard success response model."""
+    """標準成功レスポンスモデル."""
 
     data: Any
-    message: str = "Success"
+    message: str = "成功"
 
 
 class ErrorResponse(BaseModel):
-    """Standard error response model."""
+    """標準エラーレスポンスモデル."""
 
     detail: str
     status_code: int

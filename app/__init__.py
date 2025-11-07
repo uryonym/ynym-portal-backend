@@ -1,1 +1,1 @@
-"""ynym Portal Backend application package."""
+"""ynym Portal Backend アプリケーションパッケージ."""

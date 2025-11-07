@@ -1,12 +1,12 @@
-"""Application configuration using Pydantic Settings."""
+"""Pydantic Settings を使用したアプリケーション設定."""
 
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
+    """環境変数から読み込まれたアプリケーション設定."""
 
-    # Database
+    # データベース
     db_host: str = "localhost"
     db_port: int = 5432
     db_name: str = "ynym_portal"
@@ -18,19 +18,19 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expiration_hours: int = 24
 
-    # Environment
+    # 環境
     environment: str = "development"
     log_level: str = "DEBUG"
 
     class Config:
-        """Pydantic config."""
+        """Pydantic 設定."""
 
         env_file = ".env"
         case_sensitive = False
 
     @property
     def database_url(self) -> str:
-        """Build database URL from individual components."""
+        """個別の要素からデータベース URL を組み立てる."""
         return (
             f"postgresql+asyncpg://{self.db_user}:{self.db_password}"
             f"@{self.db_host}:{self.db_port}/{self.db_name}"

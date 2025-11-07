@@ -1,4 +1,4 @@
-"""JWT token generation and validation."""
+"""JWT トークン生成と検証."""
 
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -7,14 +7,14 @@ from app.config import settings
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create a JWT access token.
+    """JWT アクセストークンを作成.
 
     Args:
-        data: Data to encode in the token
-        expires_delta: Token expiration time delta
+        data: トークンにエンコードするデータ
+        expires_delta: トークン有効期限
 
     Returns:
-        JWT token string
+        JWT トークン文字列
     """
     to_encode = data.copy()
 
@@ -35,16 +35,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 def verify_token(token: str) -> dict:
-    """Verify and decode a JWT token.
+    """JWT トークンを検証してデコード.
 
     Args:
-        token: JWT token string
+        token: JWT トークン文字列
 
     Returns:
-        Decoded token data
+        デコードされたトークンデータ
 
     Raises:
-        jwt.InvalidTokenError: If token is invalid or expired
+        jwt.InvalidTokenError: トークンが無効または期限切れの場合
     """
     try:
         payload = jwt.decode(
@@ -54,4 +54,4 @@ def verify_token(token: str) -> dict:
         )
         return payload
     except jwt.InvalidTokenError as e:
-        raise jwt.InvalidTokenError(f"Invalid token: {e}")
+        raise jwt.InvalidTokenError(f"無効なトークン: {e}")

@@ -1,11 +1,11 @@
-"""API router that includes all endpoint routers."""
+"""すべてのエンドポイントルータを含む API ルータ."""
 
 from fastapi import APIRouter
 
 router = APIRouter()
 
-# Health check endpoint (basic example)
+# ヘルスチェックエンドポイント（基本的な例）
 @router.get("/health")
 async def health() -> dict:
-    """Health check endpoint."""
+    """ヘルスチェックエンドポイント."""
     return {"status": "ok"}

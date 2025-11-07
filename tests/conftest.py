@@ -1,4 +1,4 @@
-"""Pytest configuration and fixtures."""
+"""pytest 設定と fixture."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,13 +12,13 @@ from app.config import settings
 
 @pytest.fixture
 def client():
-    """FastAPI test client."""
+    """FastAPI テストクライアント."""
     return TestClient(app)
 
 
 @pytest.fixture
 async def async_client():
-    """Async test client for FastAPI."""
+    """FastAPI 用の非同期テストクライアント."""
     from httpx import AsyncClient
 
     async with AsyncClient(app=app, base_url="http://test") as ac:

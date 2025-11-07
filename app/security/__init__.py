@@ -1,1 +1,1 @@
-"""Security and authentication package."""
+"""セキュリティと認証パッケージ."""

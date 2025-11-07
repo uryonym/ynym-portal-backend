@@ -1,1 +1,1 @@
-"""Integration tests package."""
+"""統合テストパッケージ."""

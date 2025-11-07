@@ -1,15 +1,15 @@
-"""Custom exception classes for the application."""
+"""アプリケーション用のカスタム例外クラス."""
 
 
 class ApplicationException(Exception):
-    """Base exception class for the application."""
+    """アプリケーション用の基本例外クラス."""
 
     def __init__(self, message: str, status_code: int = 500):
-        """Initialize exception.
+        """例外を初期化.
 
         Args:
-            message: Exception message
-            status_code: HTTP status code
+            message: 例外メッセージ
+            status_code: HTTP ステータスコード
         """
         self.message = message
         self.status_code = status_code
@@ -17,32 +17,32 @@ class ApplicationException(Exception):
 
 
 class ValidationException(ApplicationException):
-    """Raised when validation fails."""
+    """検証に失敗した場合に発生."""
 
     def __init__(self, message: str):
-        """Initialize validation exception."""
+        """検証例外を初期化."""
         super().__init__(message, status_code=422)
 
 
 class NotFoundException(ApplicationException):
-    """Raised when a resource is not found."""
+    """リソースが見つからない場合に発生."""
 
-    def __init__(self, message: str = "Resource not found"):
-        """Initialize not found exception."""
+    def __init__(self, message: str = "リソースが見つかりません"):
+        """見つからない例外を初期化."""
         super().__init__(message, status_code=404)
 
 
 class AuthenticationException(ApplicationException):
-    """Raised when authentication fails."""
+    """認証に失敗した場合に発生."""
 
-    def __init__(self, message: str = "Authentication failed"):
-        """Initialize authentication exception."""
+    def __init__(self, message: str = "認証に失敗しました"):
+        """認証例外を初期化."""
         super().__init__(message, status_code=401)
 
 
 class AuthorizationException(ApplicationException):
-    """Raised when authorization fails."""
+    """認可に失敗した場合に発生."""
 
-    def __init__(self, message: str = "Insufficient permissions"):
-        """Initialize authorization exception."""
+    def __init__(self, message: str = "アクセス権限が不足しています"):
+        """認可例外を初期化."""
         super().__init__(message, status_code=403)
