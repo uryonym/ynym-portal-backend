@@ -1,7 +1,22 @@
 [project]
 name = "ynym-portal-backend"
 version = "0.1.0"
-description = "Add your description here"
+description = "FastAPI backend system for ynym portal"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi[standard]",
+    "sqlmodel",
+    "asyncpg",
+    "pydantic-settings",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "mypy",
+    "mkdocs",
+    "mkdocs-material",
+]
