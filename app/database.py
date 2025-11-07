@@ -1,6 +1,6 @@
 """Database connection and session management."""
 
-from sqlmodel import create_engine, Session
+from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
@@ -18,7 +18,7 @@ async_session_factory = sessionmaker(
 )
 
 
-async def get_session() -> AsyncSession:
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Dependency for getting database session."""
     async with async_session_factory() as session:
         yield session
