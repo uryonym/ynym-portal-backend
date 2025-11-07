@@ -10,6 +10,8 @@ dependencies = [
     "asyncpg",
     "pydantic-settings",
     "python-dotenv",
+    "python-jose[cryptography]",
+    "passlib[bcrypt]",
 ]
 
 [project.optional-dependencies]
