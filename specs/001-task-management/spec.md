@@ -1,34 +1,35 @@
-# Feature Specification: Task Management
+# 機能仕様書: タスク管理
 
-**Feature Branch**: `001-task-management`
-**Created**: 2025-11-08
-**Status**: Draft
-**Input**: User description: "タスク管理機能を作ります。タスクを一覧で見ることができ、追加ボタンを押すとモーダルが開いて、タスク内容を入力し新規作成します。タスクの一覧をタップするとそのタスクを編集、または削除することができます。入力する内容はタスクタイトル、詳細、期日、完了したかどうかです。"
+**機能ブランチ**: `001-task-management`
+**作成日**: 2025-11-08
+**ステータス**: 下書き
+**入力**: ユーザー説明: "タスク管理機能を作ります。タスクを一覧で見ることができ、追加ボタンを押すとモーダルが開いて、タスク内容を入力し新規作成します。タスクの一覧をタップするとそのタスクを編集、または削除することができます。入力する内容はタスクタイトル、詳細、期日、完了したかどうかです。"
 
-## User Scenarios & Testing _(mandatory)_
+## ユーザーシナリオとテスト _(必須)_
 
 <!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
+  重要: ユーザーストーリーは重要性の順に優先順位付けされるべきです。
+  各ユーザーストーリー/ジャーニーは独立してテスト可能である必要があります。つまり、
+  実装の1つのみ実装した場合でも、価値を提供する実行可能な MVP
+  （最小実行可能製品）が必要です。
 
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
+  各ストーリーに優先順位を割り当てます（P1、P2、P3 など）。P1 が最も重要です。
+  各ストーリーを独立したスライスと考えてください:
+  - 独立して開発可能
+  - 独立してテスト可能
+  - 独立してデプロイ可能
+  - ユーザーに独立してデモンストレーション可能
 -->
 
-### User Story 1 - View All Tasks (Priority: P1)
+### ユーザーストーリー 1 - すべてのタスクを表示（優先度: P1）
 
 ユーザーがタスク管理画面にアクセスして、すべてのタスクを一覧表示で確認できます。この基本的な表示機能がなければタスク管理は成立しないため、最高優先度とします。
 
-**Why this priority**: タスク管理システムの最も基本的な機能。ユーザーが現在のタスク状況を把握できる最初のステップです。
+**この優先度である理由**: タスク管理システムの最も基本的な機能。ユーザーが現在のタスク状況を把握できる最初のステップです。
 
-**Independent Test**: ユーザーがアプリケーションを開くと、作成済みのタスクがすべてリスト形式で表示され、完了状態が視覚的に区別できることで検証できます。
+**独立したテスト**: ユーザーがアプリケーションを開くと、作成済みのタスクがすべてリスト形式で表示され、完了状態が視覚的に区別できることで検証できます。
 
-**Acceptance Scenarios**:
+**受け入れシナリオ**:
 
 1. **Given** タスクが 3 件作成されている, **When** ユーザーがタスク管理画面を開く, **Then** すべての 3 件のタスクが一覧表示される
 2. **Given** 完了したタスクと未完了のタスクが混在している, **When** タスク一覧を確認する, **Then** 各タスクの完了状態が明確に表示される
@@ -36,15 +37,15 @@
 
 ---
 
-### User Story 2 - Create New Task via Modal (Priority: P1)
+### ユーザーストーリー 2 - モーダルで新規タスクを作成（優先度: P1）
 
 ユーザーが追加ボタンを押すとモーダルが開き、タスク情報を入力して新規タスクを作成します。この機能はタスク管理システムの中核的な機能です。
 
-**Why this priority**: タスクの作成機能なくしてタスク管理は成立しません。ユーザーが最初に必要とする操作です。
+**この優先度である理由**: タスクの作成機能なくしてタスク管理は成立しません。ユーザーが最初に必要とする操作です。
 
-**Independent Test**: ユーザーが追加ボタンをクリック → モーダルが表示 → 必要な情報を入力 → 保存 → タスク一覧に新しいタスクが追加されることで検証できます。
+**独立したテスト**: ユーザーが追加ボタンをクリック → モーダルが表示 → 必要な情報を入力 → 保存 → タスク一覧に新しいタスクが追加されることで検証できます。
 
-**Acceptance Scenarios**:
+**受け入れシナリオ**:
 
 1. **Given** タスク一覧画面が表示されている, **When** 追加ボタンを押す, **Then** 入力フォームを含むモーダルが開く
 2. **Given** モーダルが開いている, **When** タスクタイトル「買い物」、詳細「牛乳を買う」、期日「2025-11-15」、完了状態「未完了」を入力して保存ボタンを押す, **Then** モーダルが閉じてタスク一覧に新しいタスクが表示される
@@ -53,15 +54,15 @@
 
 ---
 
-### User Story 3 - Edit Existing Task (Priority: P2)
+### ユーザーストーリー 3 - 既存タスクを編集（優先度: P2）
 
 ユーザーがタスク一覧からタスクをタップして、そのタスクの内容を編集できます。情報更新は日常的な操作です。
 
-**Why this priority**: タスク情報の更新はよく発生する操作ですが、作成・表示よりは優先度が低くなります。
+**この優先度である理由**: タスク情報の更新はよく発生する操作ですが、作成・表示よりは優先度が低くなります。
 
-**Independent Test**: ユーザーがタスクをタップ → 編集モーダルが表示 → 情報を変更 → 保存 → タスク一覧に反映されることで検証できます。
+**独立したテスト**: ユーザーがタスクをタップ → 編集モーダルが表示 → 情報を変更 → 保存 → タスク一覧に反映されることで検証できます。
 
-**Acceptance Scenarios**:
+**受け入れシナリオ**:
 
 1. **Given** タスク一覧が表示されている, **When** 既存のタスクをタップする, **Then** 編集モーダルが開いて現在の情報が表示される
 2. **Given** 編集モーダルが開いている, **When** タスクタイトルを「買い物」から「食材の買い物」に変更して保存する, **Then** タスク一覧で更新されたタイトルが表示される
@@ -70,22 +71,22 @@
 
 ---
 
-### User Story 4 - Delete Task (Priority: P2)
+### ユーザーストーリー 4 - タスクを削除（優先度: P2）
 
 ユーザーが不要になったタスクを削除できます。タスク管理の効率性を維持するために必要な機能です。
 
-**Why this priority**: 削除機能はタスク管理に必要ですが、作成・表示・編集よりは優先度が低くなります。
+**この優先度である理由**: 削除機能はタスク管理に必要ですが、作成・表示・編集よりは優先度が低くなります。
 
-**Independent Test**: ユーザーがタスクを選択して削除操作 → 確認ダイアログ → 確認後にタスク一覧から消えることで検証できます。
+**独立したテスト**: ユーザーがタスクを選択して削除操作 → 確認ダイアログ → 確認後にタスク一覧から消えることで検証できます。
 
-**Acceptance Scenarios**:
+**受け入れシナリオ**:
 
 1. **Given** タスク一覧が表示されている, **When** タスクをタップして編集モーダルを開く, **Then** 削除ボタンが表示される
 2. **Given** 削除ボタンが表示されている, **When** 削除ボタンをクリックする, **Then** 「このタスクを削除しますか？」という確認ダイアログが表示される
 3. **Given** 確認ダイアログが表示されている, **When** 「削除」を選択する, **Then** タスクが削除されてタスク一覧から消える
 4. **Given** 確認ダイアログが表示されている, **When** 「キャンセル」を選択する, **Then** タスクは削除されずにモーダルが閉じる
 
-### Edge Cases
+### エッジケース
 
 - タスクタイトルが空の状態で保存しようとした場合、エラーメッセージが表示される
 - タスクタイトルが非常に長い場合（例：500 文字以上）、一覧表示で適切に省略される
@@ -94,50 +95,50 @@
 - タスクは期日が近い順に表示される。期日が設定されていないタスクは、作成日時の古い順に表示される
 - 期日が過ぎたタスクについて、特別な視覚表現は行わない。期日情報を正確に表示し、ユーザーが「期日を過ぎています」というテキスト表示で判断できるようにする
 
-## Requirements _(mandatory)_
+## 要件 _(必須)_
 
-### Functional Requirements
+### 機能要件
 
-- **FR-001**: System MUST display all tasks in a list format on the task management screen
-- **FR-002**: System MUST allow users to create a new task by clicking an add button that opens a modal form
-- **FR-003**: System MUST require users to enter a task title (mandatory field) to create or update a task
-- **FR-004**: System MUST allow users to enter an optional task description
-- **FR-005**: System MUST allow users to set a due date for each task (optional field)
-- **FR-006**: System MUST allow users to mark a task as complete or incomplete
-- **FR-007**: System MUST enable users to edit an existing task by tapping it in the list and modifying its details
-- **FR-008**: System MUST persist all task changes (create, edit, delete) in the database
-- **FR-009**: System MUST allow users to delete a task with a confirmation dialog
-- **FR-010**: System MUST display appropriate validation error messages when required fields are missing
-- **FR-011**: System MUST close the modal after successful task creation or update
-- **FR-012**: System MUST display an empty state message when no tasks exist
-- **FR-013**: System MUST show the complete/incomplete status visually distinct for each task in the list
-- **FR-014**: System MUST sort tasks by due date in ascending order (nearest due date first). Tasks without a due date MUST be sorted by creation date in ascending order and displayed after tasks with due dates
-- **FR-015**: System MUST display overdue status information through text labels (e.g., "期日を過ぎています") without special visual styling like colors or warning icons
+- **FR-001**: システムはタスク管理画面にすべてのタスクをリスト形式で表示する必須
+- **FR-002**: システムはユーザーが追加ボタンをクリックしてモーダルフォームを開き、新規タスクを作成することを可能にする必須
+- **FR-003**: システムはユーザーがタスクを作成または更新する際に、タスクタイトル（必須フィールド）を入力することを必須にする必須
+- **FR-004**: システムはユーザーがオプションのタスク説明を入力することを可能にする必須
+- **FR-005**: システムはユーザーが各タスクの期日を設定すること（オプションフィールド）を可能にする必須
+- **FR-006**: システムはユーザーがタスクを完了または未完了としてマークすることを可能にする必須
+- **FR-007**: システムはユーザーがリスト内のタスクをタップしてそれをタップして既存タスクを編集し、詳細を変更することを可能にする必須
+- **FR-008**: システムはすべてのタスク変更（作成、編集、削除）をデータベースに永続化する必須
+- **FR-009**: システムはユーザーが確認ダイアログでタスクを削除することを可能にする必須
+- **FR-010**: システムは必須フィールドが不足している場合に適切な検証エラーメッセージを表示する必須
+- **FR-011**: システムはタスクの作成または更新に成功した後、モーダルを閉じる必須
+- **FR-012**: システムはタスクが存在しない場合に空状態メッセージを表示する必須
+- **FR-013**: システムは各タスクの完了/未完了ステータスをリストで視覚的に区別して表示する必須
+- **FR-014**: システムはタスクを期日の昇順（最も近い期日が最初）でソートする必須。期日のないタスクは作成日時の昇順でソートされて、期日ありのタスクの後に表示される必須
+- **FR-015**: システムは期日超過ステータス情報を赤い背景やアイコンなどの特別なビジュアルスタイルなしに、テキストラベル（例: 「期日を過ぎています」）を通じて表示する必須
 
-### Key Entities
+### キーエンティティ
 
-- **Task**: Represents a single task item with the following attributes:
-  - **Task ID**: Unique identifier for the task
-  - **Title**: The name/subject of the task (required)
-  - **Description**: Detailed information about the task (optional)
-  - **Due Date**: The deadline for completing the task (optional)
-  - **Complete Status**: Boolean flag indicating whether the task is completed
-  - **Created Date**: Timestamp when the task was created
-  - **Updated Date**: Timestamp when the task was last modified
+- **タスク**: 以下の属性を持つ単一のタスクアイテムを表します:
+  - **タスク ID**: タスクの一意識別子
+  - **タイトル**: タスクの名前/件名（必須）
+  - **説明**: タスクの詳細情報（オプション）
+  - **期日**: タスク完了の期限（オプション）
+  - **完了ステータス**: タスクが完了したかどうかを示すブール値フラグ
+  - **作成日時**: タスクが作成されたときのタイムスタンプ
+  - **更新日時**: タスクが最後に変更されたときのタイムスタンプ
 
-## Success Criteria _(mandatory)_
+## 成功基準 _(必須)_
 
-### Measurable Outcomes
+### 測定可能な成果
 
-- **SC-001**: Users can create a new task and see it appear in the list within 2 seconds
-- **SC-002**: Users can complete the full task lifecycle (create, view, edit, delete) within 5 minutes for all basic operations
-- **SC-003**: The task list displays all existing tasks with 100% accuracy
-- **SC-004**: Users can distinguish between completed and incomplete tasks visually on the first view without additional interaction
-- **SC-005**: System supports at least 1000 tasks in a single list without performance degradation
-- **SC-006**: Task creation and modification operations complete successfully 99% of the time
-- **SC-007**: Users successfully complete their intended task operation on the first attempt at least 95% of the time
+- **SC-001**: ユーザーは新規タスクを作成してから 2 秒以内にリストに表示されたことを確認できます
+- **SC-002**: ユーザーはすべての基本操作について完全なタスクライフサイクル（作成、表示、編集、削除）を 5 分以内に完了できます
+- **SC-003**: タスクリストは既存のすべてのタスクを 100% の精度で表示します
+- **SC-004**: ユーザーは追加の操作なしに最初のビューで完了タスクと未完了タスクを視覚的に区別できます
+- **SC-005**: システムは単一リストで少なくとも 1000 個のタスクをサポートしており、パフォーマンスの低下はありません
+- **SC-006**: タスク作成および変更操作は 99% の成功率で完了します
+- **SC-007**: ユーザーは最初の試行で意図したタスク操作を少なくとも 95% の確率で正常に完了します
 
-## Assumptions
+## 前提条件
 
 - タスク完了状態はシンプルなトグル（完了/未完了）の 2 値型です
 - 複数ユーザー間でのタスク共有は初期バージョンでは不要と仮定します
