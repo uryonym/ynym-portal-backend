@@ -48,11 +48,11 @@
 
 ### タスク
 
-- [ ] T001 プロジェクト構造確認：`app/models/`、`app/schemas/`、`app/services/`、`app/api/endpoints/`、`tests/unit/`、`tests/integration/` が存在することを確認
-- [ ] T002 PostgreSQL データベースの接続確認：`app/database.py` を確認し、asyncpg ドライバが設定されていることを確認
-- [ ] T003 FastAPI ルータ登録：`app/api/router.py` にタスクエンドポイント用ルータ登録スポットがあることを確認
-- [ ] T004 テスト環境セットアップ：`pytest.ini` または `pyproject.toml` で pytest-asyncio がインストールされていることを確認、`conftest.py` でデータベーステストフィクスチャ確認
-- [ ] T005 開発用スクリプト準備：`cd app && python -m pytest ../tests/` でテスト実行可能なことを確認、`ruff check .` と `mypy app/` でクリーンアップ可能なことを確認
+- [x] T001 プロジェクト構造確認：`app/models/`、`app/schemas/`、`app/services/`、`app/api/endpoints/`、`tests/unit/`、`tests/integration/` が存在することを確認
+- [x] T002 PostgreSQL データベースの接続確認：`app/database.py` を確認し、asyncpg ドライバが設定されていることを確認
+- [x] T003 FastAPI ルータ登録：`app/api/router.py` にタスクエンドポイント用ルータ登録スポットがあることを確認
+- [x] T004 テスト環境セットアップ：`pytest.ini` または `pyproject.toml` で pytest-asyncio がインストールされていることを確認、`conftest.py` でデータベーステストフィクスチャ確認
+- [x] T005 開発用スクリプト準備：`cd app && python -m pytest ../tests/` でテスト実行可能なことを確認、`ruff check .` と `mypy app/` でクリーンアップ可能なことを確認
 
 ---
 
