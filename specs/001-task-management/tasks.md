@@ -63,7 +63,7 @@
 ### タスク
 
 - [x] T006 [P] Task SQLModel 作成：`app/models/task.py` に Task クラスを作成。UUIDModel を継承。フィールド：`user_id`, `title`, `description`, `is_completed`, `completed_at`, `due_date`, `order`, `deleted_at`。型ヒント完備、Docstring 記載
-- [ ] T007 [P] Task スキーマ作成：`app/schemas/task.py` に TaskCreate、TaskUpdate、TaskResponse スキーマを作成。Pydantic v2 で `field_validator` を使用。title 1-255 文字、description 0-2000 文字の検証実装
+- [x] T007 [P] Task スキーマ作成：`app/schemas/task.py` に TaskCreate、TaskUpdate、TaskResponse スキーマを作成。Pydantic v2 で `field_validator` を使用。title 1-255 文字、description 0-2000 文字の検証実装
 - [ ] T008 [P] TaskService ベース層：`app/services/task_service.py` に TaskService クラス作成。`__init__(self, db_session: AsyncSession)` で DI 可能。ソート実装：`order_by(nulls_last(Task.due_date.asc()), Task.created_at.asc())`
 - [ ] T009 base.py の確認：`app/models/base.py` が JST (UTC+9) タイムスタンプを正しく使用しているか確認。`datetime.now(JST)` で `created_at`、`updated_at` が自動セットされることを確認
 - [ ] T010 例外クラス確認：`app/utils/exceptions.py` に `ValidationException`、`NotFoundException` が定義されていることを確認
