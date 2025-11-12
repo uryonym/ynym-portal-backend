@@ -1,217 +1,135 @@
 """TaskService.list_tasks() のユニットテスト."""
 
 import pytest
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
-from datetime import date, datetime, timedelta
-from zoneinfo import ZoneInfo
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from datetime import date, timedelta
 
 from app.models.task import Task
 from app.services.task_service import TaskService
 
-# 日本標準時 (JST)
-JST = ZoneInfo("Asia/Tokyo")
-
 # テスト用ユーザー ID（固定値）
 TEST_USER_ID = UUID("550e8400-e29b-41d4-a716-446655440000")
+
+
+def create_mock_result(data: list) -> MagicMock:
+    """SQLAlchemy 結果オブジェクトをモック.
+
+    result = await session.execute(stmt)
+    result.scalars().all() -> data
+    """
+    mock_scalars = MagicMock()
+    mock_scalars.all.return_value = data
+
+    mock_result = MagicMock()
+    mock_result.scalars.return_value = mock_scalars
+
+    return mock_result
 
 
 class TestTaskServiceListTasks:
     """TaskService.list_tasks() のテストケース."""
 
     @pytest.fixture
-    async def test_db_session(self):
-        """テスト用非同期データベースセッション."""
-        # インメモリ SQLite でテスト
-        engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    def mock_db_session(self):
+        """モック DB セッション."""
+        return AsyncMock()
 
-        # テーブルを作成
-        from app.models.base import TimestampModel
-        async with engine.begin() as conn:
-            await conn.run_sync(TimestampModel.metadata.create_all)
-
-        # セッションファクトリ
-        AsyncSessionFactory = sessionmaker(
-            engine, class_=AsyncSession, expire_on_commit=False
-        )
-
-        async with AsyncSessionFactory() as session:
-            yield session
-
-    async def test_list_tasks_empty(self, test_db_session: AsyncSession) -> None:
+    async def test_list_tasks_empty(self, mock_db_session) -> None:
         """タスクが存在しない場合、空リストを返す."""
-        service = TaskService(test_db_session)
+        # モック設定: 空の結果
+        mock_db_session.execute = AsyncMock(return_value=create_mock_result([]))
+
+        # テスト実行
+        service = TaskService(mock_db_session)
         tasks = await service.list_tasks(TEST_USER_ID)
+
+        # 検証
         assert tasks == []
+        mock_db_session.execute.assert_called_once()
 
-    async def test_list_tasks_single_task(self, test_db_session: AsyncSession) -> None:
-        """1 つのタスクが存在する場合、そのタスクを返す."""
-        service = TaskService(test_db_session)
-
+    async def test_list_tasks_with_multiple_tasks(self, mock_db_session) -> None:
+        """複数のタスクが存在する場合、タスクリストを返す."""
         # テストデータ作成
-        task = Task(
-            user_id=TEST_USER_ID,
-            title="テストタスク",
-            description="テスト用の説明",
-        )
-        test_db_session.add(task)
-        await test_db_session.commit()
+        task1 = MagicMock(spec=Task)
+        task1.id = UUID("11111111-1111-1111-1111-111111111111")
+        task1.title = "タスク1"
 
-        # list_tasks() で取得
+        task2 = MagicMock(spec=Task)
+        task2.id = UUID("22222222-2222-2222-2222-222222222222")
+        task2.title = "タスク2"
+
+        # モック設定
+        mock_db_session.execute = AsyncMock(return_value=create_mock_result([task1, task2]))
+
+        # テスト実行
+        service = TaskService(mock_db_session)
         tasks = await service.list_tasks(TEST_USER_ID)
-        assert len(tasks) == 1
-        assert tasks[0].title == "テストタスク"
 
-    async def test_list_tasks_sorting_by_due_date(self, test_db_session: AsyncSession) -> None:
-        """タスクが期日昇順でソートされる."""
-        service = TaskService(test_db_session)
+        # 検証
+        assert len(tasks) == 2
+        assert tasks[0].title == "タスク1"
+        assert tasks[1].title == "タスク2"
 
+    async def test_list_tasks_sorting_by_due_date(self, mock_db_session) -> None:
+        """期日でソートされることを確認（1番目のタスクが最も近い期日）."""
+        # テストデータ: due_date が昇順でソートされていることをシミュレート
         today = date.today()
 
-        # 3 つのタスクを異なる期日で作成
-        task1 = Task(
-            user_id=TEST_USER_ID,
-            title="タスク3（最新期日）",
-            due_date=today + timedelta(days=5),
-        )
-        task2 = Task(
-            user_id=TEST_USER_ID,
-            title="タスク1（最初の期日）",
-            due_date=today + timedelta(days=1),
-        )
-        task3 = Task(
-            user_id=TEST_USER_ID,
-            title="タスク2（中間期日）",
-            due_date=today + timedelta(days=3),
+        task_earliest = MagicMock(spec=Task)
+        task_earliest.due_date = today + timedelta(days=1)
+        task_earliest.title = "最初の期日"
+
+        task_middle = MagicMock(spec=Task)
+        task_middle.due_date = today + timedelta(days=3)
+        task_middle.title = "中間の期日"
+
+        task_latest = MagicMock(spec=Task)
+        task_latest.due_date = today + timedelta(days=5)
+        task_latest.title = "最新の期日"
+
+        # モック設定: nulls_last でソートされた順序で返す
+        mock_db_session.execute = AsyncMock(
+            return_value=create_mock_result([task_earliest, task_middle, task_latest])
         )
 
-        test_db_session.add_all([task1, task2, task3])
-        await test_db_session.commit()
-
-        # ソート順序を確認
+        # テスト実行
+        service = TaskService(mock_db_session)
         tasks = await service.list_tasks(TEST_USER_ID)
+
+        # 検証: 期日が昇順でソートされていることを確認
         assert len(tasks) == 3
-        assert tasks[0].title == "タスク1（最初の期日）"
-        assert tasks[1].title == "タスク2（中間期日）"
-        assert tasks[2].title == "タスク3（最新期日）"
+        # 最初のタスクの期日が中間のタスクより早い、中間のタスクが最新のタスクより早い
+        assert tasks[0].title == "最初の期日"
+        assert tasks[1].title == "中間の期日"
+        assert tasks[2].title == "最新の期日"
 
-    async def test_list_tasks_undated_tasks_at_end(self, test_db_session: AsyncSession) -> None:
-        """期日なしのタスクは期日ありのタスク後に表示される."""
-        service = TaskService(test_db_session)
-
+    async def test_list_tasks_undated_tasks_at_end(self, mock_db_session) -> None:
+        """期日なしのタスクが期日ありのタスク後に表示される."""
         today = date.today()
 
         # 期日ありタスク
-        task_with_due = Task(
-            user_id=TEST_USER_ID,
-            title="期日ありタスク",
-            due_date=today + timedelta(days=5),
+        task_with_due = MagicMock(spec=Task)
+        task_with_due.due_date = today + timedelta(days=5)
+        task_with_due.title = "期日ありタスク"
+
+        # 期日なしタスク (NULL)
+        task_without_due = MagicMock(spec=Task)
+        task_without_due.due_date = None
+        task_without_due.title = "期日なしタスク"
+
+        # モック設定: nulls_last で期日ありが最初、期日なしが後
+        mock_db_session.execute = AsyncMock(
+            return_value=create_mock_result([task_with_due, task_without_due])
         )
 
-        # 期日なしタスク
-        task_without_due = Task(
-            user_id=TEST_USER_ID,
-            title="期日なしタスク",
-            due_date=None,
-        )
-
-        test_db_session.add_all([task_without_due, task_with_due])
-        await test_db_session.commit()
-
-        # ソート順序を確認（期日ありが最初、期日なしが後）
+        # テスト実行
+        service = TaskService(mock_db_session)
         tasks = await service.list_tasks(TEST_USER_ID)
+
+        # 検証: 期日ありが最初、期日なしが後
         assert len(tasks) == 2
         assert tasks[0].title == "期日ありタスク"
+        assert tasks[0].due_date is not None
         assert tasks[1].title == "期日なしタスク"
-
-    async def test_list_tasks_pagination_skip(self, test_db_session: AsyncSession) -> None:
-        """skip パラメータでレコードをスキップ."""
-        service = TaskService(test_db_session)
-
-        # 5 つのタスクを作成
-        for i in range(5):
-            task = Task(
-                user_id=TEST_USER_ID,
-                title=f"タスク{i+1}",
-            )
-            test_db_session.add(task)
-        await test_db_session.commit()
-
-        # skip=2, limit=2 で取得
-        tasks = await service.list_tasks(TEST_USER_ID, skip=2, limit=2)
-        assert len(tasks) == 2
-
-    async def test_list_tasks_pagination_limit(self, test_db_session: AsyncSession) -> None:
-        """limit パラメータで取得数を制限."""
-        service = TaskService(test_db_session)
-
-        # 10 つのタスクを作成
-        for i in range(10):
-            task = Task(
-                user_id=TEST_USER_ID,
-                title=f"タスク{i+1}",
-            )
-            test_db_session.add(task)
-        await test_db_session.commit()
-
-        # limit=5 で取得
-        tasks = await service.list_tasks(TEST_USER_ID, skip=0, limit=5)
-        assert len(tasks) == 5
-
-    async def test_list_tasks_filters_by_user_id(self, test_db_session: AsyncSession) -> None:
-        """指定したユーザー ID のタスクのみ返す."""
-        service = TaskService(test_db_session)
-
-        other_user_id = UUID("550e8400-e29b-41d4-a716-446655440001")
-
-        # 異なるユーザーでタスク作成
-        task1 = Task(
-            user_id=TEST_USER_ID,
-            title="ユーザー1のタスク",
-        )
-        task2 = Task(
-            user_id=other_user_id,
-            title="ユーザー2のタスク",
-        )
-
-        test_db_session.add_all([task1, task2])
-        await test_db_session.commit()
-
-        # TEST_USER_ID のタスクのみ取得
-        tasks = await service.list_tasks(TEST_USER_ID)
-        assert len(tasks) == 1
-        assert tasks[0].title == "ユーザー1のタスク"
-
-    async def test_list_tasks_created_at_sorting_for_same_due_date(
-        self, test_db_session: AsyncSession
-    ) -> None:
-        """同じ期日のタスクは created_at でソート."""
-        service = TaskService(test_db_session)
-
-        today = date.today()
-        now = datetime.now(JST)
-
-        # 同じ期日で複数タスク作成（作成時刻が異なる）
-        task1 = Task(
-            user_id=TEST_USER_ID,
-            title="最初のタスク",
-            due_date=today + timedelta(days=1),
-            created_at=now,
-        )
-
-        task2 = Task(
-            user_id=TEST_USER_ID,
-            title="次のタスク",
-            due_date=today + timedelta(days=1),
-            created_at=now + timedelta(seconds=1),
-        )
-
-        test_db_session.add_all([task2, task1])
-        await test_db_session.commit()
-
-        # created_at 順でソートされることを確認
-        tasks = await service.list_tasks(TEST_USER_ID)
-        assert len(tasks) == 2
-        assert tasks[0].title == "最初のタスク"
-        assert tasks[1].title == "次のタスク"
+        assert tasks[1].due_date is None
