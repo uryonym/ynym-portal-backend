@@ -116,7 +116,7 @@
 
 - [x] T025 [P] [US2] TaskService.create_task() 実装：`app/services/task_service.py` に `async def create_task(task_create: TaskCreate, user_id: UUID) -> Task` メソッド追加。user_id を固定値（`550e8400-e29b-41d4-a716-446655440000`）で設定（後続認証実装で変更） ✅
 - [x] T026 [P] [US2] ユニットテスト - 作成成功：`tests/unit/test_task_service.py` に `test_create_task_success`、`test_create_task_with_all_fields` テスト追加。2/2 テスト合格 ✅
-- [ ] T027 [P] [US2] ユニットテスト - 作成エラー：`tests/unit/test_task_service.py` に `test_create_task_title_empty_fails`、`test_create_task_title_exceeds_max_length_fails`、`test_create_task_description_exceeds_max_length_fails` テスト追加
+- [x] T027 [P] [US2] ユニットテスト - 作成エラー：`tests/unit/test_task_service.py` に `test_create_task_title_empty_fails`、`test_create_task_title_exceeds_max_length_fails`、`test_create_task_description_exceeds_max_length_fails` テスト追加。3/3 テスト合格 ✅
 - [ ] T028 [P] [US2] POST /tasks エンドポイント実装：`app/api/endpoints/tasks.py` に `@router.post("/tasks")` エンドポイント作成。リクエスト: TaskCreate、レスポンス: `{ "data": TaskResponse, "message": "タスクが作成されました" }` (201 status code)
 - [ ] T029 [US2] エラーハンドリング：POST /tasks で ValidationException キャッチして 400 ステータス + エラー詳細返却。メッセージ例：`"title は必須項目です"`, `"title は 255 文字以内である必要があります"`
 - [ ] T030 [US2] 統合テスト - POST /tasks 成功：`tests/integration/test_task_endpoints.py` に `test_post_tasks_create_success`、`test_post_tasks_create_with_all_fields` テスト追加

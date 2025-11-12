@@ -4,6 +4,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 from datetime import date, timedelta
+from pydantic import ValidationError
 
 from app.models.task import Task
 from app.schemas.task import TaskCreate
@@ -225,3 +226,20 @@ class TestTaskServiceCreateTask:
         mock_db_session.add.assert_called_once()
         mock_db_session.commit.assert_called_once()
         mock_db_session.refresh.assert_called_once()
+
+    def test_create_task_title_empty_fails(self) -> None:
+        """タイトルが空文字列でタスク作成失敗."""
+        with pytest.raises(ValidationError):
+            TaskCreate(title="")
+
+    def test_create_task_title_exceeds_max_length_fails(self) -> None:
+        """タイトルが最大文字数を超えてタスク作成失敗."""
+        long_title = "a" * 256  # 256文字（上限255文字）
+        with pytest.raises(ValidationError):
+            TaskCreate(title=long_title)
+
+    def test_create_task_description_exceeds_max_length_fails(self) -> None:
+        """詳細が最大文字数を超えてタスク作成失敗."""
+        long_description = "a" * 2001  # 2001文字（上限2000文字）
+        with pytest.raises(ValidationError):
+            TaskCreate(title="タスク", description=long_description)
