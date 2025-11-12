@@ -119,8 +119,8 @@
 - [x] T027 [P] [US2] ユニットテスト - 作成エラー：`tests/unit/test_task_service.py` に `test_create_task_title_empty_fails`、`test_create_task_title_exceeds_max_length_fails`、`test_create_task_description_exceeds_max_length_fails` テスト追加。3/3 テスト合格 ✅
 - [x] T028 [P] [US2] POST /tasks エンドポイント実装：`app/api/endpoints/tasks.py` に `@router.post("/tasks")` エンドポイント作成。リクエスト: TaskCreate、レスポンス: `{ "data": TaskResponse, "message": "タスクが作成されました" }` (201 status code)。エンドポイント動作確認済み ✅
 - [x] T029 [US2] エラーハンドリング：POST /tasks で ValidationException キャッチして 400 ステータス + エラー詳細返却。メッセージ例：`"title は必須項目です"`, `"title は 255 文字以内である必要があります"`。実装完了：Pydantic ValidationError を 400 で返す ✅
-- [ ] T030 [US2] 統合テスト - POST /tasks 成功：`tests/integration/test_task_endpoints.py` に `test_post_tasks_create_success`、`test_post_tasks_create_with_all_fields` テスト追加
-- [ ] T031 [US2] 統合テスト - POST /tasks エラー：`tests/integration/test_task_endpoints.py` に `test_post_tasks_missing_title_fails`、`test_post_tasks_title_too_long_fails` テスト追加
+- [x] T030 [US2] 統合テスト - POST /tasks 成功：`tests/integration/test_task_endpoints.py` に `test_post_tasks_create_success`、`test_post_tasks_create_with_all_fields` テスト追加。実装完了：test_post_tasks_create_success ✅、title + description での基本テスト成功 ✅
+- [x] T031 [US2] 統合テスト - POST /tasks エラー：`tests/integration/test_task_endpoints.py` に `test_post_tasks_missing_title_fails`、`test_post_tasks_title_too_long_fails` テスト追加。実装完了：ステータスコード 400 確認 ✅、test_post_tasks_missing_title_fails ✅、test_post_tasks_title_empty_fails ✅、test_post_tasks_title_too_long_fails ✅
 - [ ] T032 [US2] Timestamp 検証：作成されたタスクの created_at, updated_at が現在の JST 時刻か確認するテスト追加
 - [ ] T033 [US2] コード品質：`ruff check app/api/endpoints/tasks.py` と `mypy app/services/task_service.py` でエラーなし
 - [ ] T034 [US2] ローカルテスト実行：`pytest tests/integration/test_task_endpoints.py::test_post_tasks_create_success -v` でテスト実行、パス確認

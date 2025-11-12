@@ -98,9 +98,10 @@ class TestTaskCreateEndpoint:
             "description": "タイトルなしのタスク",
         }
         response = client.post("/api/tasks", json=payload)
-        assert response.status_code == 422
+        assert response.status_code == 400
         data = response.json()
-        assert "detail" in data
+        assert "errors" in data
+        assert "message" in data
 
     def test_post_tasks_title_empty_fails(self, client: TestClient) -> None:
         """title が空文字列の場合、バリデーションエラー."""
@@ -109,7 +110,7 @@ class TestTaskCreateEndpoint:
             "description": "空のタイトル",
         }
         response = client.post("/api/tasks", json=payload)
-        assert response.status_code == 422
+        assert response.status_code == 400
 
     def test_post_tasks_title_too_long_fails(self, client: TestClient) -> None:
         """title が 255 文字を超える場合、バリデーションエラー."""
@@ -118,7 +119,7 @@ class TestTaskCreateEndpoint:
             "description": "長すぎるタイトル",
         }
         response = client.post("/api/tasks", json=payload)
-        assert response.status_code == 422
+        assert response.status_code == 400
 
     def test_post_tasks_description_too_long_fails(self, client: TestClient) -> None:
         """description が 2000 文字を超える場合、バリデーションエラー."""
@@ -127,7 +128,7 @@ class TestTaskCreateEndpoint:
             "description": "a" * 2001,
         }
         response = client.post("/api/tasks", json=payload)
-        assert response.status_code == 422
+        assert response.status_code == 400
 
     def test_post_tasks_created_at_is_jst(self, client: TestClient) -> None:
         """作成されたタスクの created_at が JST タイムスタンプ."""
