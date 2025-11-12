@@ -1,12 +1,16 @@
 """タスクモデル."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
+from sqlalchemy import DateTime
 from sqlmodel import Field
 
 from app.models.base import UUIDModel
+
+# 日本時間（JST）のタイムゾーン設定
+JST = timezone(timedelta(hours=9))
 
 
 class Task(UUIDModel, table=True):
@@ -53,6 +57,7 @@ class Task(UUIDModel, table=True):
     )
     completed_at: Optional[datetime] = Field(
         default=None,
+        sa_type=DateTime(timezone=True),
         description="タスク完了日時（日本時間 JST）",
     )
 
@@ -73,6 +78,7 @@ class Task(UUIDModel, table=True):
     # Soft Delete Support (Future)
     deleted_at: Optional[datetime] = Field(
         default=None,
+        sa_type=DateTime(timezone=True),
         index=True,
-        description="論理削除日時（初期バージョンは未使用、将来対応）",
+        description="論理削除日時（日本時間 JST、初期バージョンは未使用、将来対応）",
     )

@@ -1,16 +1,19 @@
 """Task 関連エンドポイント."""
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
 from app.models.task import Task
-from app.schemas.task import TaskResponse
+from app.schemas.task import TaskCreate, TaskResponse
 from app.services.task_service import TaskService
+
+# 日本時間（JST）のタイムゾーン設定
+JST = timezone(timedelta(hours=9))
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -56,8 +59,8 @@ async def list_tasks(
             completed_at=task.completed_at,
             due_date=task.due_date,
             order=task.order,
-            created_at=task.created_at or datetime.now(),
-            updated_at=task.updated_at or datetime.now(),
+            created_at=task.created_at or datetime.now(JST),
+            updated_at=task.updated_at or datetime.now(JST),
         )
         for task in tasks
     ]
@@ -65,4 +68,47 @@ async def list_tasks(
     return {
         "data": task_responses,
         "message": "タスク一覧を取得しました",
+    }
+
+
+@router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
+async def create_task(
+    task_create: TaskCreate,
+    db_session: AsyncSession = Depends(get_session),
+) -> dict:
+    """新規タスクを作成.
+
+    リクエスト本体に TaskCreate スキーマで指定されたタスク情報を使用して
+    新規タスクを作成します。作成されたタスクはレスポンス本体に返されます。
+
+    Args:
+        task_create: タスク作成スキーマ
+        db_session: データベースセッション
+
+    Returns:
+        {
+            "data": TaskResponse,
+            "message": "タスクが作成されました"
+        }
+    """
+    service = TaskService(db_session)
+    created_task: Task = await service.create_task(task_create, TEST_USER_ID)
+
+    # Task を TaskResponse に変換
+    task_response = TaskResponse(
+        id=created_task.id,
+        user_id=created_task.user_id,
+        title=created_task.title,
+        description=created_task.description,
+        is_completed=created_task.is_completed,
+        completed_at=created_task.completed_at,
+        due_date=created_task.due_date,
+        order=created_task.order,
+        created_at=created_task.created_at or datetime.now(JST),
+        updated_at=created_task.updated_at or datetime.now(JST),
+    )
+
+    return {
+        "data": task_response,
+        "message": "タスクが作成されました",
     }

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 
+from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
 # 日本時間（JST）のタイムゾーン設定
@@ -15,15 +16,19 @@ class TimestampModel(SQLModel):
     作成日時・更新日時フィールドを持つ基本モデル.
 
     すべてのドメインモデルはこのクラスを継承する.
+
+    Note: PostgreSQL TIMESTAMP WITH TIME ZONE に日本時間（JST）で保存されます。
     """
 
     created_at: Optional[datetime] = Field(
         default_factory=lambda: datetime.now(JST),
+        sa_type=DateTime(timezone=True),
         nullable=False,
         description="レコード作成日時（日本時間 JST）",
     )
     updated_at: Optional[datetime] = Field(
         default_factory=lambda: datetime.now(JST),
+        sa_type=DateTime(timezone=True),
         nullable=False,
         description="レコード最終更新日時（日本時間 JST）",
     )
