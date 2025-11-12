@@ -114,7 +114,7 @@
 
 ### タスク
 
-- [ ] T025 [P] [US2] TaskService.create_task() 実装：`app/services/task_service.py` に `async def create_task(task_create: TaskCreate, user_id: UUID) -> Task` メソッド追加。user_id を固定値（`550e8400-e29b-41d4-a716-446655440000`）で設定（後続認証実装で変更）
+- [x] T025 [P] [US2] TaskService.create_task() 実装：`app/services/task_service.py` に `async def create_task(task_create: TaskCreate, user_id: UUID) -> Task` メソッド追加。user_id を固定値（`550e8400-e29b-41d4-a716-446655440000`）で設定（後続認証実装で変更） ✅
 - [ ] T026 [P] [US2] ユニットテスト - 作成成功：`tests/unit/test_task_service.py` に `test_create_task_success`、`test_create_task_with_all_fields` テスト追加
 - [ ] T027 [P] [US2] ユニットテスト - 作成エラー：`tests/unit/test_task_service.py` に `test_create_task_title_empty_fails`、`test_create_task_title_exceeds_max_length_fails`、`test_create_task_description_exceeds_max_length_fails` テスト追加
 - [ ] T028 [P] [US2] POST /tasks エンドポイント実装：`app/api/endpoints/tasks.py` に `@router.post("/tasks")` エンドポイント作成。リクエスト: TaskCreate、レスポンス: `{ "data": TaskResponse, "message": "タスクが作成されました" }` (201 status code)
