@@ -6,6 +6,7 @@ from uuid import UUID
 from datetime import date, timedelta
 
 from app.models.task import Task
+from app.schemas.task import TaskCreate
 from app.services.task_service import TaskService
 
 # テスト用ユーザー ID（固定値）
@@ -133,3 +134,94 @@ class TestTaskServiceListTasks:
         assert tasks[0].due_date is not None
         assert tasks[1].title == "期日なしタスク"
         assert tasks[1].due_date is None
+
+
+class TestTaskServiceCreateTask:
+    """TaskService.create_task() のテストケース."""
+
+    @pytest.fixture
+    def mock_db_session(self):
+        """モック DB セッション."""
+        return AsyncMock()
+
+    async def test_create_task_success(self, mock_db_session) -> None:
+        """最小限のデータでタスク作成成功."""
+        # テストデータ
+        task_create = TaskCreate(
+            title="買い物",
+            description=None,
+            due_date=None,
+        )
+
+        # 作成後のモック Task オブジェクト
+        created_task = MagicMock(spec=Task)
+        created_task.id = UUID("33333333-3333-3333-3333-333333333333")
+        created_task.user_id = TEST_USER_ID
+        created_task.title = "買い物"
+        created_task.description = None
+        created_task.is_completed = False
+        created_task.due_date = None
+
+        # モック設定: add, commit, refresh を無視
+        mock_db_session.add = MagicMock()
+        mock_db_session.commit = AsyncMock()
+        mock_db_session.refresh = AsyncMock()
+        # add の副作用として、task オブジェクトに id を設定するシミュレーション
+        def add_side_effect(obj):
+            obj.id = created_task.id
+        mock_db_session.add.side_effect = add_side_effect
+
+        # テスト実行
+        service = TaskService(mock_db_session)
+        result_task = await service.create_task(task_create, TEST_USER_ID)
+
+        # 検証
+        assert result_task.user_id == TEST_USER_ID
+        assert result_task.title == "買い物"
+        assert result_task.is_completed is False
+        mock_db_session.add.assert_called_once()
+        mock_db_session.commit.assert_called_once()
+        mock_db_session.refresh.assert_called_once()
+
+    async def test_create_task_with_all_fields(self, mock_db_session) -> None:
+        """すべてのフィールドを指定してタスク作成成功."""
+        # テストデータ
+        due_date = date(2025, 12, 31)
+        task_create = TaskCreate(
+            title="年末大掃除",
+            description="家中をキレイにする",
+            due_date=due_date,
+            is_completed=False,
+        )
+
+        # 作成後のモック Task オブジェクト
+        created_task = MagicMock(spec=Task)
+        created_task.id = UUID("44444444-4444-4444-4444-444444444444")
+        created_task.user_id = TEST_USER_ID
+        created_task.title = "年末大掃除"
+        created_task.description = "家中をキレイにする"
+        created_task.is_completed = False
+        created_task.due_date = due_date
+
+        # モック設定
+        mock_db_session.add = MagicMock()
+        mock_db_session.commit = AsyncMock()
+        mock_db_session.refresh = AsyncMock()
+
+        def add_side_effect(obj):
+            obj.id = created_task.id
+        mock_db_session.add.side_effect = add_side_effect
+
+        # テスト実行
+        service = TaskService(mock_db_session)
+        result_task = await service.create_task(task_create, TEST_USER_ID)
+
+        # 検証
+        assert result_task.user_id == TEST_USER_ID
+        assert result_task.title == "年末大掃除"
+        assert result_task.description == "家中をキレイにする"
+        assert result_task.is_completed is False
+        assert result_task.due_date == due_date
+        mock_db_session.add.assert_called_once()
+        mock_db_session.commit.assert_called_once()
+        mock_db_session.refresh.assert_called_once()
