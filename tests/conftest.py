@@ -37,3 +37,38 @@ def sample_task_data() -> dict:
         "is_completed": False,
         "due_date": date(2025, 12, 31),
     }
+
+
+@pytest.fixture
+def task_fixtures() -> dict:
+    """
+    テスト用タスクフィクスチャデータセット.
+
+    3 つのテストタスク：
+    - task_with_due_date: 期日あり、未完了
+    - task_without_due_date: 期日なし、未完了
+    - task_completed: 完了済みタスク
+    """
+    return {
+        "task_with_due_date": {
+            "user_id": UUID("550e8400-e29b-41d4-a716-446655440000"),
+            "title": "期日ありのタスク",
+            "description": "期日が設定されているテストタスク",
+            "is_completed": False,
+            "due_date": date(2025, 11, 30),
+        },
+        "task_without_due_date": {
+            "user_id": UUID("550e8400-e29b-41d4-a716-446655440000"),
+            "title": "期日なしのタスク",
+            "description": "期日が設定されていないテストタスク",
+            "is_completed": False,
+            "due_date": None,
+        },
+        "task_completed": {
+            "user_id": UUID("550e8400-e29b-41d4-a716-446655440000"),
+            "title": "完了済みタスク",
+            "description": "すでに完了しているテストタスク",
+            "is_completed": True,
+            "due_date": date(2025, 11, 15),
+        },
+    }
