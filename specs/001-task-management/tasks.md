@@ -89,8 +89,8 @@
 
 - [x] T014 [P] [US1] TaskService.list_tasks() 実装：`app/services/task_service.py` に `async def list_tasks(skip: int = 0, limit: int = 100) -> List[Task]` メソッド追加。SQLAlchemy `nulls_last()` でソート実装。skip/limit パラメータでページネーション対応、user_id フィルタで属するタスクのみ取得 ✅
 - [x] T015 [P] [US1] ユニットテスト - リスト取得：`tests/unit/test_task_service.py` で `test_list_tasks_empty`、`test_list_tasks_with_multiple_tasks`、`test_list_tasks_sorting_by_due_date`、`test_list_tasks_undated_tasks_at_end` テストケース作成。4/4 テスト合格 ✅
-- [ ] T016 [P] [US1] GET /tasks エンドポイント実装：`app/api/endpoints/tasks.py` に `@router.get("/tasks")` エンドポイント作成。クエリパラメータ：skip (default 0), limit (default 100, max 1000)。レスポンス：`{ "data": [TaskResponse], "message": "タスク一覧を取得しました" }`
-- [ ] T017 [US1] エンドポイント登録：`app/api/router.py` に tasks ルータを登録。`from app.api.endpoints import tasks` → `app.include_router(tasks.router)`
+- [x] T016 [P] [US1] GET /tasks エンドポイント実装：`app/api/endpoints/tasks.py` に `@router.get("/tasks")` エンドポイント作成。クエリパラメータ：skip (default 0), limit (default 100, max 1000)。レスポンス：`{ "data": [TaskResponse], "message": "タスク一覧を取得しました" }` ✅
+- [x] T017 [US1] エンドポイント登録：`app/api/router.py` に tasks ルータを登録。`from app.api.endpoints import tasks` → `app.include_router(tasks.router)` ✅
 - [ ] T018 [US1] 統合テスト - GET /tasks：`tests/integration/test_task_endpoints.py` に `test_get_tasks_list_empty`、`test_get_tasks_list_with_tasks`、`test_get_tasks_sorting_correct` テスト追加
 - [ ] T019 [US1] コード品質：`ruff check app/api/endpoints/tasks.py` と `mypy app/api/endpoints/tasks.py` でエラーなし
 - [ ] T020 [US1] タスク作成テスト用フィクスチャ：`tests/conftest.py` に Task テストデータ作成用 fixture 追加。3 つのタスク（期日あり、期日なし、完了済み）を作成
