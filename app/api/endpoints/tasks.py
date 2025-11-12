@@ -4,7 +4,9 @@ from datetime import datetime, timedelta, timezone
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, Request
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
@@ -73,7 +75,7 @@ async def list_tasks(
 
 @router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_task(
-    task_create: TaskCreate,
+    request: Request,
     db_session: AsyncSession = Depends(get_session),
 ) -> dict:
     """新規タスクを作成.
@@ -82,7 +84,7 @@ async def create_task(
     新規タスクを作成します。作成されたタスクはレスポンス本体に返されます。
 
     Args:
-        task_create: タスク作成スキーマ
+        request: リクエストオブジェクト
         db_session: データベースセッション
 
     Returns:
@@ -90,7 +92,39 @@ async def create_task(
             "data": TaskResponse,
             "message": "タスクが作成されました"
         }
+
+    Raises:
+        422: リクエストボディのバリデーションエラー
     """
+    try:
+        # JSON をパースして TaskCreate にバリデーション
+        body = await request.json()
+        task_create = TaskCreate(**body)
+    except ValidationError as e:
+        # Pydantic バリデーションエラーを 400 で返す
+        error_messages = []
+        for error in e.errors():
+            field = error["loc"][0] if error["loc"] else "unknown"
+            msg = error["msg"]
+            error_messages.append(f"{field}: {msg}")
+
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "errors": error_messages,
+                "message": "入力データが正しくありません",
+            },
+        )
+    except Exception as e:
+        # JSON パースエラーなど
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "errors": [str(e)],
+                "message": "リクエストボディが不正です",
+            },
+        )
+
     service = TaskService(db_session)
     created_task: Task = await service.create_task(task_create, TEST_USER_ID)
 
