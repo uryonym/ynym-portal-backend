@@ -2,12 +2,14 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from datetime import date
+from zoneinfo import ZoneInfo
+from uuid import UUID
 
 from app.main import app
-from app.database import get_session
-from app.config import settings
+
+# 日本標準時 (JST)
+JST = ZoneInfo("Asia/Tokyo")
 
 
 @pytest.fixture
@@ -23,3 +25,15 @@ async def async_client():
 
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
+
+
+@pytest.fixture
+def sample_task_data() -> dict:
+    """テスト用タスクデータ."""
+    return {
+        "user_id": UUID("550e8400-e29b-41d4-a716-446655440000"),
+        "title": "テストタスク",
+        "description": "テストタスクの説明",
+        "is_completed": False,
+        "due_date": date(2025, 12, 31),
+    }

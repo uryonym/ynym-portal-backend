@@ -68,7 +68,7 @@
 - [x] T009 base.py の確認：`app/models/base.py` が JST (UTC+9) タイムスタンプを正しく使用しているか確認。`datetime.now(JST)` で `created_at`、`updated_at` が自動セットされることを確認
 - [x] T010 例外クラス確認：`app/utils/exceptions.py` に `ValidationException`、`NotFoundException` が定義されていることを確認
 - [x] T011 [P] ユニットテスト基盤：`tests/unit/test_task_schemas.py` でスキーマバリデーション（タイトル空、タイトル超過文字数、説明超過文字数）のテストケース作成。26 個のテストケース（TaskCreate: 11、TaskUpdate: 11、EdgeCases: 4）で全テスト合格 ✅
-- [ ] T012 [P] 統合テスト基盤：`tests/integration/test_task_endpoints.py` で API エンドポイント統合テストの骨組み作成。データベーステストフィクスチャ確認
+- [x] T012 [P] 統合テスト基盤：`tests/integration/test_task_endpoints.py` で API エンドポイント統合テストの骨組み作成。データベーステストフィクスチャ確認。19 個のテストメソッド（GET /tasks、POST /tasks、GET /{id}、PUT /{id}、DELETE /{id}）を含む ✅
 - [ ] T013 データベースマイグレーション：Alembic (または手動 DDL) で Task テーブルを PostgreSQL に作成。カラム：`id` (UUID PK), `user_id` (UUID), `title` (VARCHAR 255), `description` (TEXT), `is_completed` (BOOL), `completed_at` (TIMESTAMP), `due_date` (DATE, indexed), `order` (INT), `deleted_at` (TIMESTAMP, indexed), `created_at`, `updated_at` (TIMESTAMP JST)
 
 ---
