@@ -1,7 +1,7 @@
 """Task 関連エンドポイント."""
 
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Union
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status, Request

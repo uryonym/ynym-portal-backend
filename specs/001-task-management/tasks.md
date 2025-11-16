@@ -126,7 +126,7 @@
 - [x] T034 [US2] ローカルテスト実行：`pytest tests/integration/test_task_endpoints.py::test_post_tasks_create_success -v` でテスト実行、パス確認。実行完了：test_post_tasks_create_success ✅、6 つの関連テスト個別実行で全成功 ✅
 - [x] T035 [US2] API ドキュメント：`docs/api/endpoints.md` に POST /tasks エンドポイント説明追加。リクエストスキーマ例、レスポンス例、エラーレスポンス例を記載。実装完了：リクエスト仕様、成功例、エラー例を記載 ✅
 - [x] T036 [US2] 完了チェック：`pytest tests/integration/test_task_endpoints.py::TestTaskCreateEndpoint` で全テスト実行、パス確認。実行完了：14/14 テスト成功（個別実行）✅、重要テスト 6/6 成功 ✅
-- [ ] T037 [US2] コミット：`git add -A && git commit -m "feat: Create task endpoint (US2 - Create task via modal)"`
+- [x] T037 [US2] コミット：`git add -A && git commit -m "feat: Create task endpoint (US2 - Create task via modal)"` ✅
 
 ---
 
