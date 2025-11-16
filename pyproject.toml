@@ -17,8 +17,21 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-asyncio",
+    "httpx",
     "ruff",
     "mypy",
     "mkdocs",
     "mkdocs-material",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+addopts = "--strict-markers"
+markers = [
+    "unit: Mark test as unit test",
+    "integration: Mark test as integration test",
+    "asyncio: Mark test as async test",
 ]

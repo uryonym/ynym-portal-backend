@@ -1,0 +1,351 @@
+openapi: 3.0.3
+info:
+  title: Task Management API
+  description: |
+    ユーザーがタスクを管理するための REST API。
+    タスクの作成、更新、削除、一覧取得を行える。
+  version: 1.0.0
+  contact:
+    name: ynym Portal Backend Team
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+
+tags:
+  - name: Tasks
+    description: タスク管理エンドポイント
+
+paths:
+  /tasks:
+    get:
+      summary: すべてのタスク一覧を取得
+      description: |
+        ユーザーのすべてのタスクを取得します。
+        期日が近い順に表示され、期日なしのタスクは作成日時の古い順に表示されます。
+      operationId: listTasks
+      tags:
+        - Tasks
+      parameters:
+        - name: skip
+          in: query
+          description: スキップするレコード数（ページネーション）
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: limit
+          in: query
+          description: 取得するレコード数（デフォルト 100）
+          required: false
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 1000
+      responses:
+        "200":
+          description: タスク一覧取得成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TaskResponse"
+                  message:
+                    type: string
+                    example: "タスク一覧を取得しました"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      summary: 新規タスクを作成
+      description: 新しいタスクを作成します。
+      operationId: createTask
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskCreate"
+      responses:
+        "201":
+          description: タスク作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/TaskResponse"
+                  message:
+                    type: string
+                    example: "タスクが作成されました"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /tasks/{task_id}:
+    get:
+      summary: 特定のタスクを取得
+      description: ID 指定でタスク詳細を取得します。
+      operationId: getTask
+      tags:
+        - Tasks
+      parameters:
+        - name: task_id
+          in: path
+          description: タスク ID (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: タスク取得成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/TaskResponse"
+                  message:
+                    type: string
+                    example: "タスクを取得しました"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      summary: タスクを更新
+      description: 既存タスクを部分更新します。
+      operationId: updateTask
+      tags:
+        - Tasks
+      parameters:
+        - name: task_id
+          in: path
+          description: タスク ID (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: タスク更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/TaskResponse"
+                  message:
+                    type: string
+                    example: "タスクが更新されました"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      summary: タスクを削除
+      description: タスクを削除します。
+      operationId: deleteTask
+      tags:
+        - Tasks
+      parameters:
+        - name: task_id
+          in: path
+          description: タスク ID (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: タスク削除成功（レスポンスボディなし）
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  schemas:
+    TaskCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: タスクタイトル（必須）
+          example: "買い物"
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: タスク詳細（オプション）
+          example: "牛乳とパンを買う"
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          description: 期日（オプション、YYYY-MM-DD 形式）
+          example: "2025-11-15"
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          nullable: true
+          description: タスクタイトル（オプション）
+          example: "食材の買い物"
+        description:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: タスク詳細（オプション）
+          example: "新鮮な野菜とお肉を買う"
+        is_completed:
+          type: boolean
+          nullable: true
+          description: 完了状態（オプション）
+          example: true
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          description: 期日（オプション、YYYY-MM-DD 形式）
+          example: "2025-11-20"
+
+    TaskResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: タスク ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        user_id:
+          type: string
+          format: uuid
+          description: 所有ユーザー ID
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        title:
+          type: string
+          description: タスクタイトル
+          example: "買い物"
+        description:
+          type: string
+          nullable: true
+          description: タスク詳細
+          example: "牛乳とパンを買う"
+        is_completed:
+          type: boolean
+          description: 完了状態
+          example: false
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: 完了日時（ISO 8601、日本時間 JST）
+          example: "2025-11-12T15:30:00+09:00"
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          description: 期日（YYYY-MM-DD）
+          example: "2025-11-15"
+        order:
+          type: integer
+          description: 表示順序
+          example: 0
+        created_at:
+          type: string
+          format: date-time
+          description: 作成日時（ISO 8601、日本時間 JST）
+          example: "2025-11-08T10:00:00+09:00"
+        updated_at:
+          type: string
+          format: date-time
+          description: 更新日時（ISO 8601、日本時間 JST）
+          example: "2025-11-12T14:00:00+09:00"
+
+    Error:
+      type: object
+      required:
+        - detail
+        - status_code
+      properties:
+        detail:
+          type: string
+          description: エラーメッセージ
+        status_code:
+          type: integer
+          description: HTTP ステータスコード
+        error_type:
+          type: string
+          description: エラータイプ
+          enum:
+            - ValidationException
+            - NotFoundException
+            - InternalServerError
+
+  responses:
+    ValidationError:
+      description: バリデーションエラー（400）
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: "タイトルは 1 字以上 255 字以下である必要があります"
+            status_code: 400
+            error_type: "ValidationException"
+
+    NotFound:
+      description: リソースが見つからない（404）
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: "タスク ID が見つかりません"
+            status_code: 404
+            error_type: "NotFoundException"
+
+    InternalServerError:
+      description: サーバー内部エラー（500）
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: "予期しないエラーが発生しました"
+            status_code: 500
+            error_type: "InternalServerError"

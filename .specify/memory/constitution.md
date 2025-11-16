@@ -1,9 +1,10 @@
 <!--
-  Sync Impact Report: Constitution v1.0.0
-  - Version: None → 1.0.0 (Initial establishment)
-  - Added sections: 7 core principles, 4 sections (Guidelines, Metadata, Governance)
+  Sync Impact Report: Constitution v1.1.0
+  - Version: 1.0.0 → 1.1.0 (UUID Strategy Integration)
+  - Added section: "ID 戦略：UUID 必須採用" under Project Metadata
+  - Modified: Technical Stack clarification, added references to UUIDModel
   - Ratified: 2025-11-08
-  - Templates updated: None (baseline establishment)
+  - Last Amended: 2025-11-08 (UUID Strategy Amendment)
 -->
 
 # ynym Portal Backend Constitution
@@ -164,6 +165,46 @@ ruff (linting)・black (formatting)・mypy (type checking) による自動化を
 - **ドキュメント**: MkDocs + Material テーマ
 - **設定管理**: Pydantic Settings
 
+### ID 戦略：UUID (Universally Unique Identifier) の必須採用
+
+**すべてのドメインモデルのプライマリキーは UUID 形式に統一する MUST。**
+
+**UUID を採用する理由**:
+
+- **グローバルユニーク**: DB 間・サーバー間での重複なし、水平スケーリング対応
+- **分散システム対応**: リプリケーション・マイクロサービス・シャーディング対応
+- **プライバシー保護**: シーケンシャル ID と異なり、ID 値から予測・列挙が不可能
+- **業界標準化**: RFC 4122 国際標準、他システムとの相互性向上
+
+**実装仕様**:
+
+- Python: `from uuid import UUID, uuid4` (標準ライブラリ)
+- SQLModel: `id: UUID = Field(default_factory=uuid4, primary_key=True)`
+- PostgreSQL: `UUID` 型 （`uuid-ossp` 拡張機能）
+- asyncpg: ネイティブ UUID サポート
+- Pydantic スキーマ: UUID は JSON 文字列（RFC 4122 形式）として出力
+
+**実装例**:
+
+```python
+from uuid import UUID, uuid4
+from sqlmodel import SQLModel, Field
+
+class User(SQLModel, table=True):
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    username: str = Field(index=True, unique=True)
+    email: str = Field(index=True, unique=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+```
+
+**構成の参照**:
+
+- ベースモデル定義: `app/models/base.py` → `UUIDModel` クラス
+- タスク管理モデル設計: `docs/development/task_model_design.md`
+
+### ディレクトリ構成
+
 ### ファイル構成
 
 ```
@@ -237,4 +278,4 @@ ynym-portal-backend/
 
 ---
 
-**Version**: 1.0.0 | **Ratified**: 2025-11-08 | **Last Amended**: 2025-11-08
+**Version**: 1.1.0 | **Ratified**: 2025-11-08 | **Last Amended**: 2025-11-08 (UUID 戦略統合)
