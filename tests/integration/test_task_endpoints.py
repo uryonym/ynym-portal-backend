@@ -195,8 +195,29 @@ class TestTaskGetByIdEndpoint:
 
     def test_get_task_by_id_success(self, client: TestClient) -> None:
         """タスク ID で特定のタスクを取得."""
-        # TODO: テストデータ作成フィクスチャが必要
-        pass
+        # タスクを作成
+        create_payload = {
+            "title": "取得対象タスク",
+            "description": "これは取得テスト用タスク",
+        }
+        create_response = client.post("/api/tasks", json=create_payload)
+        assert create_response.status_code == 201
+        created_task = create_response.json()["data"]
+        task_id = created_task["id"]
+
+        # 作成したタスクを取得
+        get_response = client.get(f"/api/tasks/{task_id}")
+        assert get_response.status_code == 200
+        data = get_response.json()
+        assert "data" in data
+        task_response = data["data"]
+        assert task_response["id"] == task_id
+        assert task_response["title"] == "取得対象タスク"
+        assert task_response["description"] == "これは取得テスト用タスク"
+        assert "created_at" in task_response
+        assert "updated_at" in task_response
+        assert "message" in data
+        assert data["message"] == "タスクが取得されました"
 
     def test_get_task_by_id_not_found(self, client: TestClient) -> None:
         """存在しないタスク ID で 404 を返す."""
@@ -204,7 +225,8 @@ class TestTaskGetByIdEndpoint:
         response = client.get(f"/api/tasks/{non_existent_id}")
         assert response.status_code == 404
         data = response.json()
-        assert "detail" in data or "message" in data
+        assert "message" in data
+        assert data["message"] == "タスクが見つかりません"
 
 
 class TestTaskUpdateEndpoint:
@@ -212,13 +234,60 @@ class TestTaskUpdateEndpoint:
 
     def test_put_tasks_update_success(self, client: TestClient) -> None:
         """タスク更新で 200 ステータスと更新後のタスクを返す."""
-        # TODO: テストデータ作成フィクスチャが必要
-        pass
+        # タスクを作成
+        create_payload = {
+            "title": "更新前タスク",
+            "description": "更新前の説明",
+        }
+        create_response = client.post("/api/tasks", json=create_payload)
+        assert create_response.status_code == 201
+        created_task = create_response.json()["data"]
+        task_id = created_task["id"]
+
+        # タスクを更新
+        update_payload = {
+            "title": "更新後タスク",
+            "description": "更新後の説明",
+        }
+        update_response = client.put(f"/api/tasks/{task_id}", json=update_payload)
+        assert update_response.status_code == 200
+        data = update_response.json()
+        assert "data" in data
+        task_response = data["data"]
+        assert task_response["id"] == task_id
+        assert task_response["title"] == "更新後タスク"
+        assert task_response["description"] == "更新後の説明"
+        assert "updated_at" in task_response
+        assert "message" in data
+        assert data["message"] == "タスクが更新されました"
 
     def test_put_tasks_partial_update(self, client: TestClient) -> None:
         """部分更新: 指定されたフィールドのみ更新."""
-        # TODO: テストデータ作成フィクスチャが必要
-        pass
+        # タスクを作成
+        create_payload = {
+            "title": "部分更新前タスク",
+            "description": "これは部分更新テスト用タスク",
+            "is_completed": False,
+        }
+        create_response = client.post("/api/tasks", json=create_payload)
+        assert create_response.status_code == 201
+        created_task = create_response.json()["data"]
+        task_id = created_task["id"]
+        original_description = created_task["description"]
+
+        # is_completed フィールドのみ更新
+        update_payload = {
+            "is_completed": True,
+        }
+        update_response = client.put(f"/api/tasks/{task_id}", json=update_payload)
+        assert update_response.status_code == 200
+        data = update_response.json()
+        task_response = data["data"]
+        # 更新したフィールド
+        assert task_response["is_completed"] is True
+        # 更新していないフィールドは変わらない
+        assert task_response["title"] == "部分更新前タスク"
+        assert task_response["description"] == original_description
 
     def test_put_tasks_not_found_fails(self, client: TestClient) -> None:
         """存在しないタスク ID での更新で 404 を返す."""
@@ -228,6 +297,9 @@ class TestTaskUpdateEndpoint:
         }
         response = client.put(f"/api/tasks/{non_existent_id}", json=payload)
         assert response.status_code == 404
+        data = response.json()
+        assert "message" in data
+        assert data["message"] == "タスクが見つかりません"
 
 
 class TestTaskDeleteEndpoint:
@@ -235,11 +307,27 @@ class TestTaskDeleteEndpoint:
 
     def test_delete_task_success(self, client: TestClient) -> None:
         """タスク削除で 204 No Content を返す."""
-        # TODO: テストデータ作成フィクスチャが必要
-        pass
+        # タスクを作成
+        create_payload = {
+            "title": "削除対象タスク",
+            "description": "これは削除テスト用タスク",
+        }
+        create_response = client.post("/api/tasks", json=create_payload)
+        assert create_response.status_code == 201
+        created_task = create_response.json()["data"]
+        task_id = created_task["id"]
+
+        # タスクを削除
+        delete_response = client.delete(f"/api/tasks/{task_id}")
+        assert delete_response.status_code == 204
+        # 204 No Content なのでレスポンスボディは空
+        assert delete_response.text == "" or delete_response.text is None
 
     def test_delete_task_not_found_fails(self, client: TestClient) -> None:
         """存在しないタスク ID での削除で 404 を返す."""
         non_existent_id = "550e8400-e29b-41d4-a716-446655440099"
         response = client.delete(f"/api/tasks/{non_existent_id}")
         assert response.status_code == 404
+        data = response.json()
+        assert "message" in data
+        assert data["message"] == "タスクが見つかりません"
