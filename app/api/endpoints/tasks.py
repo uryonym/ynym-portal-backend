@@ -1,7 +1,7 @@
 """Task 関連エンドポイント."""
 
 from datetime import datetime, timedelta, timezone
-from typing import List
+from typing import Dict, List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status, Request
@@ -73,11 +73,11 @@ async def list_tasks(
     }
 
 
-@router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=None, status_code=status.HTTP_201_CREATED)
 async def create_task(
     request: Request,
     db_session: AsyncSession = Depends(get_session),
-) -> dict:
+) -> Union[dict, JSONResponse]:
     """新規タスクを作成.
 
     リクエスト本体に TaskCreate スキーマで指定されたタスク情報を使用して

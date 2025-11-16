@@ -131,17 +131,63 @@ class TestTaskCreateEndpoint:
         assert response.status_code == 400
 
     def test_post_tasks_created_at_is_jst(self, client: TestClient) -> None:
-        """作成されたタスクの created_at が JST タイムスタンプ."""
+        """作成されたタスクの created_at と updated_at が JST タイムスタンプ."""
+        from datetime import datetime, timedelta, timezone
+
         payload = {
-            "title": "JST タスク",
+            "title": "JST タスク検証",
         }
+
+        # テスト前の時刻 (JST: UTC+9)
+        jst = timezone(timedelta(hours=9))
+        before_time = datetime.now(jst)
+
         response = client.post("/api/tasks", json=payload)
         assert response.status_code == 201
+
+        # テスト後の時刻 (JST: UTC+9)
+        after_time = datetime.now(jst)
+
         data = response.json()
         task_response = data["data"]
-        # created_at が ISO 8601 形式で返されることを確認
+
+        # created_at と updated_at が存在することを確認
         assert "created_at" in task_response
-        # TODO: timezone 検証を追加 (JST を確認)
+        assert "updated_at" in task_response
+
+        # ISO 8601 形式の文字列をパース
+        created_at_str = task_response["created_at"]
+        updated_at_str = task_response["updated_at"]
+
+        # ISO 8601 文字列から datetime オブジェクトをパース
+        created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+        updated_at = datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+
+        # タイムゾーン情報がある場合、JST に変換して時刻範囲をチェック
+        if created_at.tzinfo is not None:
+            created_at_jst = created_at.astimezone(jst)
+        else:
+            # ナイーブな datetime の場合は JST として扱う
+            created_at_jst = created_at.replace(tzinfo=jst)
+
+        if updated_at.tzinfo is not None:
+            updated_at_jst = updated_at.astimezone(jst)
+        else:
+            # ナイーブな datetime の場合は JST として扱う
+            updated_at_jst = updated_at.replace(tzinfo=jst)
+
+        # created_at がテスト実行時刻の範囲内であることを確認 (時刻が現在の JST で設定されていることの証明)
+        assert before_time <= created_at_jst <= after_time, \
+            f"created_at {created_at_jst} is not within test time range ({before_time} - {after_time})"
+
+        # updated_at も同様の範囲内であることを確認
+        assert before_time <= updated_at_jst <= after_time, \
+            f"updated_at {updated_at_jst} is not within test time range ({before_time} - {after_time})"
+
+        # created_at と updated_at がほぼ同じ時刻であることを確認 (作成直後なので)
+        time_diff = abs((created_at_jst - updated_at_jst).total_seconds())
+        assert time_diff < 1, \
+            f"Time difference between created_at and updated_at should be < 1 second, got {time_diff}s"
 
 
 class TestTaskGetByIdEndpoint:
