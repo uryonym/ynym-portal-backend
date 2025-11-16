@@ -7,8 +7,9 @@ from datetime import date, timedelta
 from pydantic import ValidationError
 
 from app.models.task import Task
-from app.schemas.task import TaskCreate
+from app.schemas.task import TaskCreate, TaskUpdate
 from app.services.task_service import TaskService
+from app.utils.exceptions import NotFoundException
 
 # テスト用ユーザー ID（固定値）
 TEST_USER_ID = UUID("550e8400-e29b-41d4-a716-446655440000")
@@ -243,3 +244,134 @@ class TestTaskServiceCreateTask:
         long_description = "a" * 2001  # 2001文字（上限2000文字）
         with pytest.raises(ValidationError):
             TaskCreate(title="タスク", description=long_description)
+
+
+class TestTaskServiceGetTask:
+    """TaskService.get_task() のテストケース."""
+
+    @pytest.fixture
+    def mock_db_session(self):
+        """モック DB セッション."""
+        return AsyncMock()
+
+    async def test_get_task_success(self, mock_db_session) -> None:
+        """タスク ID とユーザー ID で正常にタスクを取得."""
+        # テスト用タスクデータ
+        task = Task(
+            id=UUID("11111111-1111-1111-1111-111111111111"),
+            user_id=TEST_USER_ID,
+            title="買い物",
+            description="牛乳を買う",
+            is_completed=False,
+        )
+
+        # モック設定
+        mock_scalars = MagicMock()
+        mock_scalars.one_or_none.return_value = task
+
+        mock_result = MagicMock()
+        mock_result.scalars.return_value = mock_scalars
+
+        mock_db_session.execute = AsyncMock(return_value=mock_result)
+
+        # テスト実行
+        service = TaskService(mock_db_session)
+        result = await service.get_task(task.id, TEST_USER_ID)
+
+        # 検証
+        assert result.id == task.id
+        assert result.title == "買い物"
+        assert result.description == "牛乳を買う"
+
+    async def test_get_task_not_found_fails(self, mock_db_session) -> None:
+        """タスクが見つからない場合、NotFoundException を発生させる."""
+        # モック設定
+        mock_scalars = MagicMock()
+        mock_scalars.one_or_none.return_value = None
+
+        mock_result = MagicMock()
+        mock_result.scalars.return_value = mock_scalars
+
+        mock_db_session.execute = AsyncMock(return_value=mock_result)
+
+        # テスト実行・検証
+        service = TaskService(mock_db_session)
+        with pytest.raises(NotFoundException):
+            await service.get_task(UUID("99999999-9999-9999-9999-999999999999"), TEST_USER_ID)
+
+
+class TestTaskServiceUpdateTask:
+    """TaskService.update_task() のテストケース."""
+
+    @pytest.fixture
+    def mock_db_session(self):
+        """モック DB セッション."""
+        return AsyncMock()
+
+    async def test_update_task_success(self, mock_db_session) -> None:
+        """タスクを正常に更新."""
+        # テスト用タスクデータ
+        task = Task(
+            id=UUID("22222222-2222-2222-2222-222222222222"),
+            user_id=TEST_USER_ID,
+            title="買い物",
+            description="牛乳を買う",
+            is_completed=False,
+        )
+
+        # モック設定: get_task の結果
+        mock_scalars = MagicMock()
+        mock_scalars.one_or_none.return_value = task
+
+        mock_result = MagicMock()
+        mock_result.scalars.return_value = mock_scalars
+
+        mock_db_session.execute = AsyncMock(return_value=mock_result)
+        mock_db_session.add = MagicMock()
+        mock_db_session.commit = AsyncMock()
+        mock_db_session.refresh = AsyncMock()
+
+        # テスト実行
+        service = TaskService(mock_db_session)
+        update_data = TaskUpdate(title="食材の買い物")
+        result = await service.update_task(task.id, update_data, TEST_USER_ID)
+
+        # 検証
+        assert result.title == "食材の買い物"
+        mock_db_session.add.assert_called_once()
+        mock_db_session.commit.assert_called_once()
+        mock_db_session.refresh.assert_called_once()
+
+    async def test_update_task_partial(self, mock_db_session) -> None:
+        """部分更新：指定フィールドのみ更新."""
+        # テスト用タスクデータ
+        task = Task(
+            id=UUID("33333333-3333-3333-3333-333333333333"),
+            user_id=TEST_USER_ID,
+            title="買い物",
+            description="牛乳を買う",
+            is_completed=False,
+        )
+
+        # モック設定: get_task の結果
+        mock_scalars = MagicMock()
+        mock_scalars.one_or_none.return_value = task
+
+        mock_result = MagicMock()
+        mock_result.scalars.return_value = mock_scalars
+
+        mock_db_session.execute = AsyncMock(return_value=mock_result)
+        mock_db_session.add = MagicMock()
+        mock_db_session.commit = AsyncMock()
+        mock_db_session.refresh = AsyncMock()
+
+        # テスト実行：is_completed のみ更新
+        service = TaskService(mock_db_session)
+        update_data = TaskUpdate(is_completed=True)
+        result = await service.update_task(task.id, update_data, TEST_USER_ID)
+
+        # 検証：is_completed が更新され、title は変わらない
+        assert result.is_completed is True
+        assert result.title == "買い物"  # 変更されていない
+        mock_db_session.add.assert_called_once()
+        mock_db_session.commit.assert_called_once()

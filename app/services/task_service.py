@@ -10,6 +10,7 @@ from sqlmodel import col
 
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskUpdate
+from app.utils.exceptions import NotFoundException
 
 
 class TaskService:
@@ -67,7 +68,7 @@ class TaskService:
         result = await self.db_session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_task(self, task_id: UUID, user_id: UUID) -> Task | None:
+    async def get_task(self, task_id: UUID, user_id: UUID) -> Task:
         """
         タスクを ID で取得.
 
@@ -76,7 +77,10 @@ class TaskService:
             user_id: ユーザー ID（所有権確認用）
 
         Returns:
-            Task オブジェクト、存在しない場合は None
+            Task オブジェクト
+
+        Raises:
+            NotFoundException: タスクが見つからない場合
 
         Example:
             >>> service = TaskService(db_session)
@@ -89,7 +93,10 @@ class TaskService:
             .where(col(Task.deleted_at).is_(None))  # 論理削除フィルター（将来）
         )
         result = await self.db_session.execute(stmt)
-        return result.scalars().one_or_none()
+        task = result.scalars().one_or_none()
+        if not task:
+            raise NotFoundException(f"タスク ID {task_id} が見つかりません")
+        return task
 
     async def create_task(self, task_create: TaskCreate, user_id: UUID) -> Task:
         """
@@ -124,7 +131,7 @@ class TaskService:
         task_id: UUID,
         task_update: TaskUpdate,
         user_id: UUID,
-    ) -> Task | None:
+    ) -> Task:
         """
         既存タスクを更新（部分更新対応）.
 
@@ -134,7 +141,10 @@ class TaskService:
             user_id: ユーザー ID（所有権確認用）
 
         Returns:
-            更新された Task オブジェクト、存在しない場合は None
+            更新された Task オブジェクト
+
+        Raises:
+            NotFoundException: タスクが見つからない場合
 
         Example:
             >>> service = TaskService(db_session)
@@ -142,8 +152,6 @@ class TaskService:
             >>> task = await service.update_task(task_id, update_data, user_id)
         """
         task = await self.get_task(task_id, user_id)
-        if not task:
-            return None
 
         # 更新されたフィールドのみ適用（部分更新）
         update_data = task_update.model_dump(exclude_unset=True)
@@ -155,7 +163,7 @@ class TaskService:
         await self.db_session.refresh(task)
         return task
 
-    async def delete_task(self, task_id: UUID, user_id: UUID) -> bool:
+    async def delete_task(self, task_id: UUID, user_id: UUID) -> None:
         """
         タスクを削除（物理削除）.
 
@@ -163,17 +171,13 @@ class TaskService:
             task_id: タスク ID
             user_id: ユーザー ID（所有権確認用）
 
-        Returns:
-            削除成功時 True、タスクが存在しない場合 False
+        Raises:
+            NotFoundException: タスクが見つからない場合
 
         Example:
             >>> service = TaskService(db_session)
-            >>> success = await service.delete_task(task_id, user_id)
+            >>> await service.delete_task(task_id, user_id)
         """
         task = await self.get_task(task_id, user_id)
-        if not task:
-            return False
-
         await self.db_session.delete(task)
         await self.db_session.commit()
-        return True

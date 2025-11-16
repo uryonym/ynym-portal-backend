@@ -143,7 +143,7 @@
 
 ### タスク
 
-- [ ] T038 [P] [US3] TaskService.get_task() 実装：`app/services/task_service.py` に `async def get_task(task_id: UUID) -> Task` メソッド追加。NotFoundException を発生させて 404 対応
+- [x] T038 [P] [US3] TaskService.get_task() 実装：`app/services/task_service.py` に `async def get_task(task_id: UUID) -> Task` メソッド追加。NotFoundException を発生させて 404 対応。実装完了：get_task ✅、update_task 修正 ✅、delete_task 修正 ✅、テスト 4/4 成功 ✅
 - [ ] T039 [P] [US3] TaskService.update_task() 実装：`app/services/task_service.py` に `async def update_task(task_id: UUID, task_update: TaskUpdate) -> Task` メソッド追加。部分更新対応（指定されたフィールドのみ更新）。updated_at 自動更新
 - [ ] T040 [P] [US3] ユニットテスト - 取得・更新：`tests/unit/test_task_service.py` に `test_get_task_success`、`test_get_task_not_found_fails`、`test_update_task_success`、`test_update_task_partial` テスト追加
 - [ ] T041 [US3] GET /tasks/{task_id} エンドポイント実装：`app/api/endpoints/tasks.py` に `@router.get("/tasks/{task_id}")` エンドポイント作成。レスポンス: TaskResponse、404 時エラーメッセージ
