@@ -6,10 +6,10 @@ services:
     hostname: ynym-portal-backend
     restart: always
     environment:
-      - DB_HOST=ynym-portal-db
-      - DB_NAME=ynym_portal
-      - DB_USER=uryonym
-      - DB_PASSWORD="Etsryacas#24"
+      - DB_HOST=
+      - DB_NAME=
+      - DB_USER=
+      - DB_PASSWORD=
     networks:
       - ynym-portal-network
       - nginx-proxy-network
