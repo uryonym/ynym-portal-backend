@@ -1,0 +1,23 @@
+services:
+  ynym-portal-backend:
+    build: .
+    image: ynym-portal-backend
+    container_name: ynym-portal-backend
+    hostname: ynym-portal-backend
+    restart: always
+    environment:
+      - DB_HOST=ynym-portal-db
+      - DB_NAME=ynym_portal
+      - DB_USER=uryonym
+      - DB_PASSWORD="Etsryacas#24"
+    networks:
+      - ynym-portal-network
+      - nginx-proxy-network
+
+networks:
+  ynym-portal-network:
+    name: ynym-portal-network
+    external: true
+  nginx-proxy-network:
+    name: nginx-proxy-network
+    external: true
