@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.endpoints import tasks
+from app.api.endpoints import tasks, vehicles
 
 router = APIRouter()
 
@@ -15,3 +15,6 @@ async def health() -> dict:
 
 # タスクエンドポイントを登録
 router.include_router(tasks.router)
+
+# 車エンドポイントを登録
+router.include_router(vehicles.router)

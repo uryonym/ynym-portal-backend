@@ -176,7 +176,235 @@ Health check endpoint to verify the API is running.
 
 ## Authentication
 
-(Documentation to be added as authentication endpoints are implemented)
+## (Documentation to be added as authentication endpoints are implemented)
+
+## Vehicles
+
+### GET /api/vehicles
+
+所有する車一覧を取得します。
+
+**説明:**
+
+ユーザーが所有するすべての車を取得します。作成日時の新しい順でソートされて返されます。
+
+**クエリパラメータ:**
+
+| パラメータ | デフォルト | 説明                           |
+| ---------- | ---------- | ------------------------------ |
+| skip       | 0          | スキップするレコード数         |
+| limit      | 100        | 取得するレコード数 (最大 1000) |
+
+**成功レスポンス (200):**
+
+```json
+{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "user_id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "マイカー",
+      "seq": "MG-001",
+      "maker": "Toyota",
+      "model": "Prius",
+      "year": 2023,
+      "number": "東京 123あ 1234",
+      "tank_capacity": 50.0,
+      "created_at": "2025-11-16T16:00:00+09:00",
+      "updated_at": "2025-11-16T16:00:00+09:00"
+    }
+  ],
+  "message": "車一覧を取得しました"
+}
+```
+
+---
+
+### POST /api/vehicles
+
+新規車を作成します。
+
+**説明:**
+
+ユーザーが所有する新しい車を作成します。
+
+**リクエストボディ:**
+
+```json
+{
+  "name": "マイカー",
+  "seq": "MG-001",
+  "maker": "Toyota",
+  "model": "Prius",
+  "year": 2023,
+  "number": "東京 123あ 1234",
+  "tank_capacity": 50.0
+}
+```
+
+**バリデーション:**
+
+- `name`: 必須、1-255 文字
+- `seq`: 必須、1-100 文字
+- `maker`: 必須、1-100 文字
+- `model`: 必須、1-100 文字
+- `year`: オプション
+- `number`: オプション、1-50 文字
+- `tank_capacity`: オプション、正の数
+
+**成功レスポンス (201):**
+
+```json
+{
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "マイカー",
+    "seq": "MG-001",
+    "maker": "Toyota",
+    "model": "Prius",
+    "year": 2023,
+    "number": "東京 123あ 1234",
+    "tank_capacity": 50.0,
+    "created_at": "2025-11-16T16:00:00+09:00",
+    "updated_at": "2025-11-16T16:00:00+09:00"
+  },
+  "message": "車が作成されました"
+}
+```
+
+**エラーレスポンス (400):**
+
+```json
+{
+  "errors": ["name: 車名は必須項目です"],
+  "message": "入力データが正しくありません"
+}
+```
+
+---
+
+### GET /api/vehicles/{vehicle_id}
+
+特定の車を取得します。
+
+**説明:**
+
+指定した車 ID の車情報を取得します。
+
+**パスパラメータ:**
+
+- `vehicle_id`: 車 ID (UUID)
+
+**成功レスポンス (200):**
+
+```json
+{
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "マイカー",
+    "seq": "MG-001",
+    "maker": "Toyota",
+    "model": "Prius",
+    "year": 2023,
+    "number": "東京 123あ 1234",
+    "tank_capacity": 50.0,
+    "created_at": "2025-11-16T16:00:00+09:00",
+    "updated_at": "2025-11-16T16:00:00+09:00"
+  },
+  "message": "車が取得されました"
+}
+```
+
+**エラーレスポンス (404):**
+
+```json
+{
+  "error": "車 ID 550e8400-e29b-41d4-a716-446655440099 が見つかりません",
+  "message": "車が見つかりません"
+}
+```
+
+---
+
+### PUT /api/vehicles/{vehicle_id}
+
+車情報を更新します。
+
+**説明:**
+
+指定した車 ID の車情報を更新します。指定されたフィールドのみが更新されます（部分更新対応）。
+
+**パスパラメータ:**
+
+- `vehicle_id`: 車 ID (UUID)
+
+**リクエストボディ（すべてのフィールドはオプション）:**
+
+```json
+{
+  "name": "新しい名前",
+  "year": 2024
+}
+```
+
+**成功レスポンス (200):**
+
+```json
+{
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "新しい名前",
+    "seq": "MG-001",
+    "maker": "Toyota",
+    "model": "Prius",
+    "year": 2024,
+    "number": "東京 123あ 1234",
+    "tank_capacity": 50.0,
+    "created_at": "2025-11-16T16:00:00+09:00",
+    "updated_at": "2025-11-16T16:05:00+09:00"
+  },
+  "message": "車が更新されました"
+}
+```
+
+**エラーレスポンス (404):**
+
+```json
+{
+  "error": "車 ID 550e8400-e29b-41d4-a716-446655440099 が見つかりません",
+  "message": "車が見つかりません"
+}
+```
+
+---
+
+### DELETE /api/vehicles/{vehicle_id}
+
+車を削除します。
+
+**説明:**
+
+指定した車 ID の車を削除します。
+
+**パスパラメータ:**
+
+- `vehicle_id`: 車 ID (UUID)
+
+**成功レスポンス (204):**
+
+レスポンスボディなし
+
+**エラーレスポンス (404):**
+
+```json
+{
+  "error": "車 ID 550e8400-e29b-41d4-a716-446655440099 が見つかりません",
+  "message": "車が見つかりません"
+}
+```
 
 ---
 
@@ -186,6 +414,7 @@ Health check endpoint to verify the API is running.
 | ---- | --------------------- |
 | 200  | OK                    |
 | 201  | Created               |
+| 204  | No Content            |
 | 400  | Bad Request           |
 | 401  | Unauthorized          |
 | 403  | Forbidden             |
