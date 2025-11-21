@@ -13,7 +13,6 @@ class TestVehicleCreateSchema:
         """すべてのフィールド指定で有効."""
         schema = VehicleCreate(
             name="マイカー",
-            seq=1,
             maker="Toyota",
             model="Prius",
             year=2023,
@@ -21,7 +20,6 @@ class TestVehicleCreateSchema:
             tank_capacity=50.0,
         )
         assert schema.name == "マイカー"
-        assert schema.seq == 1
         assert schema.maker == "Toyota"
         assert schema.model == "Prius"
         assert schema.year == 2023
@@ -32,12 +30,10 @@ class TestVehicleCreateSchema:
         """最小限のフィールドで有効."""
         schema = VehicleCreate(
             name="マイカー",
-            seq=1,
             maker="Toyota",
             model="Prius",
         )
         assert schema.name == "マイカー"
-        assert schema.seq == 1
         assert schema.maker == "Toyota"
         assert schema.model == "Prius"
         assert schema.year is None
@@ -58,7 +54,6 @@ class TestVehicleCreateSchema:
         with pytest.raises(ValidationError) as exc_info:
             VehicleCreate(
                 name="",
-                seq=1,
                 maker="Toyota",
                 model="Prius",
             )
@@ -69,7 +64,6 @@ class TestVehicleCreateSchema:
         with pytest.raises(ValidationError) as exc_info:
             VehicleCreate(
                 name="   ",
-                seq=1,
                 maker="Toyota",
                 model="Prius",
             )
@@ -80,27 +74,16 @@ class TestVehicleCreateSchema:
         with pytest.raises(ValidationError) as exc_info:
             VehicleCreate(
                 name="a" * 256,
-                seq=1,
                 maker="Toyota",
                 model="Prius",
             )
         assert "車名は 255 文字以内である必要があります" in str(exc_info.value)
-
-    def test_vehicle_create_seq_required(self) -> None:
-        """管理番号は必須."""
-        with pytest.raises(ValidationError):
-            VehicleCreate(
-                name="マイカー",
-                maker="Toyota",
-                model="Prius",
-            )
 
     def test_vehicle_create_tank_capacity_positive(self) -> None:
         """タンク容量は正の数."""
         with pytest.raises(ValidationError) as exc_info:
             VehicleCreate(
                 name="マイカー",
-                seq=1,
                 maker="Toyota",
                 model="Prius",
                 tank_capacity=-50.0,
@@ -111,7 +94,6 @@ class TestVehicleCreateSchema:
         """車名の前後の空白はトリム."""
         schema = VehicleCreate(
             name="  マイカー  ",
-            seq=1,
             maker="Toyota",
             model="Prius",
         )
@@ -121,7 +103,6 @@ class TestVehicleCreateSchema:
         """ナンバーの前後の空白はトリム."""
         schema = VehicleCreate(
             name="マイカー",
-            seq=1,
             maker="Toyota",
             model="Prius",
             number="  東京 123あ 1234  ",

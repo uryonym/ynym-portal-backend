@@ -48,7 +48,6 @@ class TestVehicleServiceListVehicles:
             id=UUID("550e8400-e29b-41d4-a716-446655440001"),
             user_id=TEST_USER_ID,
             name="マイカー1",
-            seq=1,
             maker="Toyota",
             model="Prius",
             created_at=datetime.now(JST),
@@ -58,7 +57,6 @@ class TestVehicleServiceListVehicles:
             id=UUID("550e8400-e29b-41d4-a716-446655440002"),
             user_id=TEST_USER_ID,
             name="マイカー2",
-            seq=1,
             maker="Honda",
             model="Fit",
             created_at=datetime.now(JST),
@@ -87,7 +85,6 @@ class TestVehicleServiceGetVehicle:
             id=TEST_VEHICLE_ID,
             user_id=TEST_USER_ID,
             name="マイカー",
-            seq=1,
             maker="Toyota",
             model="Prius",
             created_at=datetime.now(JST),
@@ -129,13 +126,17 @@ class TestVehicleServiceCreateVehicle:
         """車作成成功."""
         vehicle_create = VehicleCreate(
             name="マイカー",
-            seq=1,
             maker="Toyota",
             model="Prius",
             year=2023,
             number="東京 123あ 1234",
             tank_capacity=50.0,
         )
+
+        # モック設定: execute の戻り値に one_or_none メソッドを追加
+        mock_result = MagicMock()
+        mock_result.scalars().one_or_none.return_value = None  # 最初の seq 取得で None
+        mock_db_session.execute.return_value = mock_result
 
         # モック設定: add → commit → refresh の流れ
         async def mock_refresh(obj: Vehicle) -> None:
@@ -151,6 +152,7 @@ class TestVehicleServiceCreateVehicle:
         assert created_vehicle.name == "マイカー"
         assert created_vehicle.maker == "Toyota"
         assert created_vehicle.year == 2023
+        assert created_vehicle.seq == 1  # 最初の車は seq=1
 
     @pytest.mark.asyncio
     async def test_create_vehicle_with_minimal_fields(
@@ -159,10 +161,14 @@ class TestVehicleServiceCreateVehicle:
         """最小限フィールドで作成."""
         vehicle_create = VehicleCreate(
             name="マイカー",
-            seq=1,
             maker="Toyota",
             model="Prius",
         )
+
+        # モック設定: execute の戻り値に one_or_none メソッドを追加
+        mock_result = MagicMock()
+        mock_result.scalars().one_or_none.return_value = None  # 最初の seq 取得で None
+        mock_db_session.execute.return_value = mock_result
 
         async def mock_refresh(obj: Vehicle) -> None:
             obj.id = TEST_VEHICLE_ID
@@ -177,6 +183,7 @@ class TestVehicleServiceCreateVehicle:
         assert created_vehicle.name == "マイカー"
         assert created_vehicle.year is None
         assert created_vehicle.number is None
+        assert created_vehicle.seq == 1  # 最初の車は seq=1
 
 
 class TestVehicleServiceUpdateVehicle:
@@ -189,7 +196,6 @@ class TestVehicleServiceUpdateVehicle:
             id=TEST_VEHICLE_ID,
             user_id=TEST_USER_ID,
             name="古い名前",
-            seq=1,
             maker="Toyota",
             model="Prius",
             created_at=datetime.now(JST),
@@ -223,7 +229,6 @@ class TestVehicleServiceUpdateVehicle:
             id=TEST_VEHICLE_ID,
             user_id=TEST_USER_ID,
             name="マイカー",
-            seq=1,
             maker="Toyota",
             model="Prius",
             year=2020,

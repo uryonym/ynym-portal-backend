@@ -10,7 +10,6 @@ class VehicleCreate(BaseModel):
 
     Attributes:
         name: 車名（必須、1-255 文字）
-        management_number: 管理番号（必須、1-100 文字）
         maker: メーカー（必須、1-100 文字）
         model: 型式（必須、1-100 文字）
         year: 年式（オプション）
@@ -19,7 +18,6 @@ class VehicleCreate(BaseModel):
     """
 
     name: str
-    seq: int
     maker: str
     model: str
     year: Optional[int] = None
@@ -35,14 +33,6 @@ class VehicleCreate(BaseModel):
         if len(v) > 255:
             raise ValueError("車名は 255 文字以内である必要があります")
         return v.strip()
-
-    @field_validator("seq")
-    @classmethod
-    def validate_seq(cls, v: int) -> int:
-        """シーケンスのバリデーション."""
-        if v <= 0:
-            raise ValueError("シーケンスは正の整数である必要があります")
-        return v
 
     @field_validator("maker")
     @classmethod

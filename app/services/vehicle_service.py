@@ -89,6 +89,8 @@ class VehicleService:
     ) -> Vehicle:
         """新規車を作成.
 
+        seq（シーケンス番号）はユーザーが所有する車の中で自動採番されます。
+
         Args:
             vehicle_create: 車作成スキーマ
             user_id: ユーザー ID
@@ -96,10 +98,28 @@ class VehicleService:
         Returns:
             作成された Vehicle オブジェクト
         """
+        # ユーザーが既に所有している車の最大 seq を取得
+        stmt = (
+            select(Vehicle)
+            .where(
+                and_(
+                    Vehicle.user_id == user_id,
+                    Vehicle.deleted_at.is_(None),
+                )
+            )
+            .order_by(desc(Vehicle.seq))
+            .limit(1)
+        )
+        result = await self.db_session.execute(stmt)
+        last_vehicle = result.scalars().one_or_none()
+
+        # 新しい seq を決定（既存最大値 + 1、存在しない場合は 1）
+        next_seq = (last_vehicle.seq + 1) if last_vehicle else 1
+
         vehicle = Vehicle(
             user_id=user_id,
             name=vehicle_create.name,
-            seq=vehicle_create.seq,
+            seq=next_seq,
             maker=vehicle_create.maker,
             model=vehicle_create.model,
             year=vehicle_create.year,
