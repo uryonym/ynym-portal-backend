@@ -14,7 +14,7 @@ from app.schemas.fuel_record import (
 from app.services.fuel_record_service import FuelRecordService
 
 router = APIRouter(
-    prefix="/api/fuel-records",
+    prefix="/fuel-records",
     tags=["fuel-records"],
 )
 
