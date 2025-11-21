@@ -408,6 +408,213 @@ Health check endpoint to verify the API is running.
 
 ---
 
+## Fuel Records
+
+### GET /api/fuel-records
+
+燃費記録一覧を取得します。
+
+**説明:**
+
+指定した車の燃費記録を取得します。新規作成順です。
+
+**クエリパラメータ:**
+
+| パラメータ | 型      | デフォルト | 説明                  |
+| ---------- | ------- | ---------- | --------------------- |
+| vehicle_id | UUID    | 必須       | 車 ID                 |
+| limit      | integer | 100        | 取得件数（最大 1000） |
+| offset     | integer | 0          | オフセット            |
+
+**成功レスポンス (200):**
+
+```json
+[
+  {
+    "id": "650e8400-e29b-41d4-a716-446655440001",
+    "vehicle_id": "550e8400-e29b-41d4-a716-446655440001",
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "refuel_datetime": "2025-11-19T10:00:00+09:00",
+    "total_mileage": 10000.5,
+    "fuel_type": "ハイオク",
+    "unit_price": 165.0,
+    "total_cost": 6600.0,
+    "is_full_tank": true,
+    "gas_station_name": "ENEOS 東京駅前",
+    "created_at": "2025-11-19T10:30:00+09:00",
+    "updated_at": "2025-11-19T10:30:00+09:00"
+  }
+]
+```
+
+---
+
+### POST /api/fuel-records
+
+燃費記録を作成します。
+
+**説明:**
+
+新しい燃費記録を作成します。
+
+**リクエストボディ:**
+
+```json
+{
+  "vehicle_id": "550e8400-e29b-41d4-a716-446655440001",
+  "refuel_datetime": "2025-11-19T10:00:00+09:00",
+  "total_mileage": 10000.5,
+  "fuel_type": "ハイオク",
+  "unit_price": 165.0,
+  "total_cost": 6600.0,
+  "is_full_tank": true,
+  "gas_station_name": "ENEOS 東京駅前"
+}
+```
+
+**成功レスポンス (201 Created):**
+
+```json
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001",
+  "vehicle_id": "550e8400-e29b-41d4-a716-446655440001",
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "refuel_datetime": "2025-11-19T10:00:00+09:00",
+  "total_mileage": 10000.5,
+  "fuel_type": "ハイオク",
+  "unit_price": 165.0,
+  "total_cost": 6600.0,
+  "is_full_tank": true,
+  "gas_station_name": "ENEOS 東京駅前",
+  "created_at": "2025-11-19T10:30:00+09:00",
+  "updated_at": "2025-11-19T10:30:00+09:00"
+}
+```
+
+---
+
+### GET /api/fuel-records/{fuel_record_id}
+
+燃費記録を取得します。
+
+**説明:**
+
+指定した ID の燃費記録を取得します。
+
+**パスパラメータ:**
+
+- `fuel_record_id`: 燃費記録 ID (UUID)
+
+**成功レスポンス (200):**
+
+```json
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001",
+  "vehicle_id": "550e8400-e29b-41d4-a716-446655440001",
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "refuel_datetime": "2025-11-19T10:00:00+09:00",
+  "total_mileage": 10000.5,
+  "fuel_type": "ハイオク",
+  "unit_price": 165.0,
+  "total_cost": 6600.0,
+  "is_full_tank": true,
+  "gas_station_name": "ENEOS 東京駅前",
+  "created_at": "2025-11-19T10:30:00+09:00",
+  "updated_at": "2025-11-19T10:30:00+09:00"
+}
+```
+
+**エラーレスポンス (404):**
+
+```json
+{
+  "detail": "燃費記録が見つかりません"
+}
+```
+
+---
+
+### PUT /api/fuel-records/{fuel_record_id}
+
+燃費記録を更新します。
+
+**説明:**
+
+指定した燃費記録を更新します。指定されたフィールドのみ更新します（部分更新対応）。
+
+**パスパラメータ:**
+
+- `fuel_record_id`: 燃費記録 ID (UUID)
+
+**リクエストボディ（すべてオプション）:**
+
+```json
+{
+  "refuel_datetime": "2025-11-19T11:00:00+09:00",
+  "total_mileage": 10100.5,
+  "fuel_type": "レギュラー",
+  "unit_price": 160.0,
+  "total_cost": 6400.0,
+  "is_full_tank": false,
+  "gas_station_name": "JOMO 神宮前"
+}
+```
+
+**成功レスポンス (200):**
+
+```json
+{
+  "id": "650e8400-e29b-41d4-a716-446655440001",
+  "vehicle_id": "550e8400-e29b-41d4-a716-446655440001",
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "refuel_datetime": "2025-11-19T11:00:00+09:00",
+  "total_mileage": 10100.5,
+  "fuel_type": "レギュラー",
+  "unit_price": 160.0,
+  "total_cost": 6400.0,
+  "is_full_tank": false,
+  "gas_station_name": "JOMO 神宮前",
+  "created_at": "2025-11-19T10:30:00+09:00",
+  "updated_at": "2025-11-19T11:30:00+09:00"
+}
+```
+
+**エラーレスポンス (404):**
+
+```json
+{
+  "detail": "燃費記録が見つかりません"
+}
+```
+
+---
+
+### DELETE /api/fuel-records/{fuel_record_id}
+
+燃費記録を削除します。
+
+**説明:**
+
+指定した燃費記録 ID の燃費記録を削除します（論理削除）。
+
+**パスパラメータ:**
+
+- `fuel_record_id`: 燃費記録 ID (UUID)
+
+**成功レスポンス (204):**
+
+レスポンスボディなし
+
+**エラーレスポンス (404):**
+
+```json
+{
+  "detail": "燃費記録が見つかりません"
+}
+```
+
+---
+
 ## Error Codes
 
 | Code | Description           |
