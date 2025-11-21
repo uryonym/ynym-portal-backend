@@ -4,7 +4,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
-from sqlmodel import Column, Field, SQLModel
+from sqlalchemy import DateTime
+from sqlmodel import Field, SQLModel
 
 # 日本標準時 (JST)
 JST = timezone(timedelta(hours=9))
@@ -42,10 +43,15 @@ class Vehicle(SQLModel, table=True):
 
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(JST),
-        sa_column=Column(nullable=False),
+        sa_type=DateTime(timezone=True),
+        nullable=False,
     )
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(JST),
-        sa_column=Column(nullable=False),
+        sa_type=DateTime(timezone=True),
+        nullable=False,
     )
-    deleted_at: Optional[datetime] = Field(default=None, sa_column=Column(nullable=True))
+    deleted_at: Optional[datetime] = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),
+    )

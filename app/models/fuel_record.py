@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
+from sqlalchemy import DateTime
 from sqlmodel import Field
 
 from app.models.base import UUIDModel
@@ -45,6 +46,7 @@ class FuelRecord(UUIDModel, table=True):
 
     # Core Fields
     refuel_datetime: datetime = Field(
+        sa_type=DateTime(timezone=True),
         description="給油日時（必須）",
     )
     total_mileage: int = Field(
@@ -78,6 +80,6 @@ class FuelRecord(UUIDModel, table=True):
     # Soft Delete Support
     deleted_at: Optional[datetime] = Field(
         default=None,
-        index=True,
+        sa_type=DateTime(timezone=True),
         description="削除日時（論理削除用）",
     )
