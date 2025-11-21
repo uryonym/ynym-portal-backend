@@ -1,5 +1,6 @@
 """Vehicle（車）関連エンドポイント."""
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import List, Union
 from uuid import UUID
@@ -8,6 +9,8 @@ from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 from app.database import get_session
 from app.models.vehicle import Vehicle
@@ -103,6 +106,7 @@ async def create_vehicle(
         vehicle_create = VehicleCreate(**body)
     except ValidationError as e:
         # Pydantic バリデーションエラーを 400 で返す
+        logger.error(f"VehicleCreate バリデーションエラー: {e.errors()}", exc_info=True)
         error_messages = []
         for error in e.errors():
             field = error["loc"][0] if error["loc"] else "unknown"
@@ -118,6 +122,7 @@ async def create_vehicle(
         )
     except Exception as e:
         # JSON パースエラーなど
+        logger.error(f"リクエストボディパースエラー: {str(e)}", exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
