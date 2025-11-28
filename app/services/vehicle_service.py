@@ -3,9 +3,8 @@
 from typing import List
 from uuid import UUID
 
-from sqlalchemy import and_, select
+from sqlalchemy import and_, asc, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import desc
 
 from app.models.vehicle import Vehicle
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate
@@ -47,7 +46,7 @@ class VehicleService:
                     Vehicle.deleted_at.is_(None),
                 )
             )
-            .order_by(desc(Vehicle.created_at))
+            .order_by(asc(Vehicle.seq))
             .offset(skip)
             .limit(limit)
         )
