@@ -1,7 +1,7 @@
 """Task 関連エンドポイント."""
 
 from datetime import datetime, timedelta, timezone
-from typing import List, Union
+from typing import List, Optional, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status, Request
@@ -28,6 +28,9 @@ TEST_USER_ID = UUID("550e8400-e29b-41d4-a716-446655440000")
 async def list_tasks(
     skip: int = Query(0, ge=0, description="スキップするレコード数"),
     limit: int = Query(100, ge=1, le=1000, description="取得するレコード数"),
+    is_completed: Optional[bool] = Query(
+        None, description="完了状態でフィルタ（true: 完了のみ、false: 未完了のみ、指定なし: 全件）"
+    ),
     db_session: AsyncSession = Depends(get_session),
 ) -> dict:
     """タスク一覧を取得.
@@ -38,6 +41,7 @@ async def list_tasks(
     Args:
         skip: スキップするレコード数（デフォルト 0）
         limit: 取得するレコード数（デフォルト 100、最大 1000）
+        is_completed: 完了状態でフィルタ（true: 完了のみ、false: 未完了のみ、指定なし: 全件）
         db_session: データベースセッション
 
     Returns:
@@ -48,7 +52,7 @@ async def list_tasks(
     """
     service = TaskService(db_session)
     tasks: List[Task] = await service.list_tasks(
-        user_id=TEST_USER_ID, skip=skip, limit=limit
+        user_id=TEST_USER_ID, skip=skip, limit=limit, is_completed=is_completed
     )
 
     # Task を TaskResponse に変換

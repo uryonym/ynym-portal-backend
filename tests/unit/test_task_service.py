@@ -137,6 +137,76 @@ class TestTaskServiceListTasks:
         assert tasks[1].title == "期日なしタスク"
         assert tasks[1].due_date is None
 
+    async def test_list_tasks_filter_by_is_completed_false(self, mock_db_session) -> None:
+        """is_completed=False で未完了タスクのみ取得."""
+        # 未完了タスク
+        task_incomplete = MagicMock(spec=Task)
+        task_incomplete.id = UUID("11111111-1111-1111-1111-111111111111")
+        task_incomplete.title = "未完了タスク"
+        task_incomplete.is_completed = False
+
+        # モック設定: 未完了のみ返す
+        mock_db_session.execute = AsyncMock(
+            return_value=create_mock_result([task_incomplete])
+        )
+
+        # テスト実行
+        service = TaskService(mock_db_session)
+        tasks = await service.list_tasks(TEST_USER_ID, is_completed=False)
+
+        # 検証
+        assert len(tasks) == 1
+        assert tasks[0].title == "未完了タスク"
+        assert tasks[0].is_completed is False
+
+    async def test_list_tasks_filter_by_is_completed_true(self, mock_db_session) -> None:
+        """is_completed=True で完了済みタスクのみ取得."""
+        # 完了タスク
+        task_complete = MagicMock(spec=Task)
+        task_complete.id = UUID("22222222-2222-2222-2222-222222222222")
+        task_complete.title = "完了タスク"
+        task_complete.is_completed = True
+
+        # モック設定: 完了のみ返す
+        mock_db_session.execute = AsyncMock(
+            return_value=create_mock_result([task_complete])
+        )
+
+        # テスト実行
+        service = TaskService(mock_db_session)
+        tasks = await service.list_tasks(TEST_USER_ID, is_completed=True)
+
+        # 検証
+        assert len(tasks) == 1
+        assert tasks[0].title == "完了タスク"
+        assert tasks[0].is_completed is True
+
+    async def test_list_tasks_filter_by_is_completed_none(self, mock_db_session) -> None:
+        """is_completed=None（指定なし）で全タスク取得."""
+        # 完了タスク
+        task_complete = MagicMock(spec=Task)
+        task_complete.id = UUID("11111111-1111-1111-1111-111111111111")
+        task_complete.title = "完了タスク"
+        task_complete.is_completed = True
+
+        # 未完了タスク
+        task_incomplete = MagicMock(spec=Task)
+        task_incomplete.id = UUID("22222222-2222-2222-2222-222222222222")
+        task_incomplete.title = "未完了タスク"
+        task_incomplete.is_completed = False
+
+        # モック設定: 全タスク返す
+        mock_db_session.execute = AsyncMock(
+            return_value=create_mock_result([task_complete, task_incomplete])
+        )
+
+        # テスト実行
+        service = TaskService(mock_db_session)
+        tasks = await service.list_tasks(TEST_USER_ID, is_completed=None)
+
+        # 検証
+        assert len(tasks) == 2
+
 
 class TestTaskServiceCreateTask:
     """TaskService.create_task() のテストケース."""

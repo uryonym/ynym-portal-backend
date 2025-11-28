@@ -1,6 +1,6 @@
 """タスク管理サービス層."""
 
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import asc, select
@@ -35,6 +35,7 @@ class TaskService:
         user_id: UUID,
         skip: int = 0,
         limit: int = 100,
+        is_completed: Optional[bool] = None,
     ) -> List[Task]:
         """
         タスク一覧を取得.
@@ -46,6 +47,7 @@ class TaskService:
             user_id: ユーザー ID（将来的に FK として使用）
             skip: スキップするレコード数（ページネーション）
             limit: 取得するレコード数（デフォルト 100、最大 1000）
+            is_completed: 完了状態でフィルタ（None: 全件、True: 完了のみ、False: 未完了のみ）
 
         Returns:
             Task のリスト
@@ -53,18 +55,23 @@ class TaskService:
         Example:
             >>> service = TaskService(db_session)
             >>> tasks = await service.list_tasks(user_id, skip=0, limit=10)
+            >>> incomplete_tasks = await service.list_tasks(user_id, is_completed=False)
         """
         stmt = (
             select(Task)
             .where(col(Task.user_id) == user_id)
             .where(col(Task.deleted_at).is_(None))  # 論理削除フィルター（将来）
-            .order_by(
-                nulls_last(asc(col(Task.due_date))),
-                asc(col(Task.created_at)),
-            )
-            .offset(skip)
-            .limit(limit)
         )
+
+        # is_completed フィルタ
+        if is_completed is not None:
+            stmt = stmt.where(col(Task.is_completed) == is_completed)
+
+        stmt = stmt.order_by(
+            nulls_last(asc(col(Task.due_date))),
+            asc(col(Task.created_at)),
+        ).offset(skip).limit(limit)
+
         result = await self.db_session.execute(stmt)
         return list(result.scalars().all())
 
