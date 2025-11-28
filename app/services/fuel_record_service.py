@@ -3,7 +3,7 @@
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.fuel_record import FuelRecord
@@ -50,7 +50,7 @@ class FuelRecordService:
         if vehicle_id:
             query = query.where(FuelRecord.vehicle_id == vehicle_id)
 
-        query = query.order_by(FuelRecord.created_at.desc()).limit(limit).offset(offset)
+        query = query.order_by(desc(FuelRecord.refuel_datetime)).limit(limit).offset(offset)
 
         result = await self.db_session.execute(query)
         return result.scalars().all()
