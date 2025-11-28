@@ -50,7 +50,26 @@ async def list_fuel_records(
         offset=offset,
     )
 
-    return [FuelRecordResponse.model_validate(record) for record in fuel_records]
+    return [
+        FuelRecordResponse(
+            id=item.record.id,
+            vehicle_id=item.record.vehicle_id,
+            user_id=item.record.user_id,
+            refuel_datetime=item.record.refuel_datetime,
+            total_mileage=item.record.total_mileage,
+            fuel_type=item.record.fuel_type,
+            unit_price=item.record.unit_price,
+            total_cost=item.record.total_cost,
+            is_full_tank=item.record.is_full_tank,
+            gas_station_name=item.record.gas_station_name,
+            distance_traveled=item.distance_traveled,
+            fuel_amount=item.fuel_amount,
+            fuel_efficiency=item.fuel_efficiency,
+            created_at=item.record.created_at,
+            updated_at=item.record.updated_at,
+        )
+        for item in fuel_records
+    ]
 
 
 @router.post("", response_model=FuelRecordResponse, status_code=status.HTTP_201_CREATED)

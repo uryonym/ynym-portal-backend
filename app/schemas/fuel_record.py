@@ -155,6 +155,18 @@ class FuelRecordResponse(BaseModel):
     total_cost: int = Field(description="総費用（円）")
     is_full_tank: bool = Field(description="満タンかどうか")
     gas_station_name: Optional[str] = Field(description="ガソリンスタンド名")
+    distance_traveled: Optional[int] = Field(
+        default=None,
+        description="走行距離（km）: 今回の総走行距離 - 前回の総走行距離",
+    )
+    fuel_amount: Optional[float] = Field(
+        default=None,
+        description="給油量（L）: 総費用 / 単価",
+    )
+    fuel_efficiency: Optional[float] = Field(
+        default=None,
+        description="燃費（km/L）: 走行距離 / 給油量（小数点2桁）",
+    )
     created_at: datetime = Field(description="作成日時（JST）")
     updated_at: datetime = Field(description="更新日時（JST）")
 

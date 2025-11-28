@@ -78,8 +78,138 @@ class TestFuelRecordServiceListFuelRecords:
         records = await service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
 
         assert len(records) == 2
-        assert records[0].fuel_type == "ハイオク"
-        assert records[1].fuel_type == "レギュラー"
+        assert records[0].record.fuel_type == "ハイオク"
+        assert records[1].record.fuel_type == "レギュラー"
+
+
+class TestFuelRecordServiceFuelEfficiencyCalculation:
+    """燃費計算テスト."""
+
+    @pytest.mark.asyncio
+    async def test_fuel_efficiency_first_record(self, mock_db_session: AsyncMock) -> None:
+        """最初のレコードは総走行距離がそのまま走行距離になる."""
+        user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
+        vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
+        now = datetime.now(JST)
+
+        record1 = FuelRecord(
+            id=UUID("550e8400-e29b-41d4-a716-446655440101"),
+            vehicle_id=vehicle_id,
+            user_id=user_id,
+            refuel_datetime=now,
+            total_mileage=500,
+            fuel_type="ハイオク",
+            unit_price=170,
+            total_cost=8500,  # 8500 / 170 = 50L
+            created_at=now,
+            updated_at=now,
+        )
+
+        mock_result = MagicMock()
+        mock_result.scalars().all.return_value = [record1]
+        mock_db_session.execute.return_value = mock_result
+
+        service = FuelRecordService(mock_db_session)
+        records = await service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
+
+        assert len(records) == 1
+        # 最初の記録なので走行距離 = 総走行距離
+        assert records[0].distance_traveled == 500
+        # 給油量 = 8500 / 170 = 50L
+        assert records[0].fuel_amount == 50.0
+        # 燃費 = 500 / 50 = 10.0 km/L
+        assert records[0].fuel_efficiency == 10.0
+
+    @pytest.mark.asyncio
+    async def test_fuel_efficiency_with_previous_record(
+        self, mock_db_session: AsyncMock
+    ) -> None:
+        """前回データがある場合は差分が走行距離になる."""
+        user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
+        vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
+        now = datetime.now(JST)
+        yesterday = now - timedelta(days=1)
+
+        # 最新レコード（総走行距離 1000km）
+        record_new = FuelRecord(
+            id=UUID("550e8400-e29b-41d4-a716-446655440102"),
+            vehicle_id=vehicle_id,
+            user_id=user_id,
+            refuel_datetime=now,
+            total_mileage=1000,
+            fuel_type="ハイオク",
+            unit_price=170,
+            total_cost=8500,  # 50L
+            created_at=now,
+            updated_at=now,
+        )
+
+        # 前回レコード（総走行距離 500km）
+        record_old = FuelRecord(
+            id=UUID("550e8400-e29b-41d4-a716-446655440101"),
+            vehicle_id=vehicle_id,
+            user_id=user_id,
+            refuel_datetime=yesterday,
+            total_mileage=500,
+            fuel_type="ハイオク",
+            unit_price=165,
+            total_cost=8250,
+            created_at=yesterday,
+            updated_at=yesterday,
+        )
+
+        # execute が2回呼ばれる（list用、全件取得用）
+        mock_result_list = MagicMock()
+        mock_result_list.scalars().all.return_value = [record_new]
+
+        mock_result_all = MagicMock()
+        mock_result_all.scalars().all.return_value = [record_old, record_new]  # 昇順
+
+        mock_db_session.execute.side_effect = [mock_result_list, mock_result_all]
+
+        service = FuelRecordService(mock_db_session)
+        records = await service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
+
+        assert len(records) == 1
+        # 走行距離 = 1000 - 500 = 500km
+        assert records[0].distance_traveled == 500
+        # 給油量 = 8500 / 170 = 50L
+        assert records[0].fuel_amount == 50.0
+        # 燃費 = 500 / 50 = 10.0 km/L
+        assert records[0].fuel_efficiency == 10.0
+
+    @pytest.mark.asyncio
+    async def test_fuel_efficiency_rounding(self, mock_db_session: AsyncMock) -> None:
+        """燃費は小数点2桁で丸められる."""
+        user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
+        vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
+        now = datetime.now(JST)
+
+        record1 = FuelRecord(
+            id=UUID("550e8400-e29b-41d4-a716-446655440101"),
+            vehicle_id=vehicle_id,
+            user_id=user_id,
+            refuel_datetime=now,
+            total_mileage=450,
+            fuel_type="ハイオク",
+            unit_price=170,
+            total_cost=8330,  # 8330 / 170 = 49.0
+            created_at=now,
+            updated_at=now,
+        )
+
+        mock_result = MagicMock()
+        mock_result.scalars().all.return_value = [record1]
+        mock_db_session.execute.return_value = mock_result
+
+        service = FuelRecordService(mock_db_session)
+        records = await service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
+
+        assert len(records) == 1
+        # 給油量 = 8330 / 170 = 49.0
+        assert records[0].fuel_amount == 49.0
+        # 燃費 = 450 / 49.0 = 9.18367... → 9.18
+        assert records[0].fuel_efficiency == 9.18
 
 
 class TestFuelRecordServiceCreateFuelRecord:

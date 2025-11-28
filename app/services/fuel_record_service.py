@@ -1,13 +1,24 @@
 """燃費記録サービス."""
 
+from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, desc
+from sqlalchemy import asc, select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.fuel_record import FuelRecord
 from app.schemas.fuel_record import FuelRecordCreate, FuelRecordUpdate
+
+
+@dataclass
+class FuelRecordWithCalculation:
+    """燃費計算結果付き燃費記録."""
+
+    record: FuelRecord
+    distance_traveled: Optional[int]
+    fuel_amount: Optional[float]
+    fuel_efficiency: Optional[float]
 
 
 class FuelRecordService:
@@ -30,8 +41,8 @@ class FuelRecordService:
         vehicle_id: Optional[UUID] = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> list[FuelRecord]:
-        """燃費記録一覧取得.
+    ) -> list[FuelRecordWithCalculation]:
+        """燃費記録一覧取得（燃費計算付き）.
 
         Args:
             user_id: ユーザー ID.
@@ -40,7 +51,7 @@ class FuelRecordService:
             offset: オフセット.
 
         Returns:
-            燃費記録リスト（新規順）.
+            燃費計算結果付き燃費記録リスト（新規順）.
         """
         query = select(FuelRecord).where(
             FuelRecord.user_id == user_id,
@@ -53,7 +64,84 @@ class FuelRecordService:
         query = query.order_by(desc(FuelRecord.refuel_datetime)).limit(limit).offset(offset)
 
         result = await self.db_session.execute(query)
-        return result.scalars().all()
+        records = list(result.scalars().all())
+
+        # 燃費計算のため、同じ車両の全レコードを取得（給油日時の昇順）
+        if vehicle_id and records:
+            all_records_query = (
+                select(FuelRecord)
+                .where(
+                    FuelRecord.user_id == user_id,
+                    FuelRecord.vehicle_id == vehicle_id,
+                    FuelRecord.deleted_at.is_(None),
+                )
+                .order_by(asc(FuelRecord.refuel_datetime))
+            )
+            all_result = await self.db_session.execute(all_records_query)
+            all_records = list(all_result.scalars().all())
+
+            return self._calculate_fuel_efficiency(records, all_records)
+
+        # vehicle_id が指定されていない場合は計算なし
+        return [
+            FuelRecordWithCalculation(
+                record=r,
+                distance_traveled=None,
+                fuel_amount=None,
+                fuel_efficiency=None,
+            )
+            for r in records
+        ]
+
+    def _calculate_fuel_efficiency(
+        self,
+        records: list[FuelRecord],
+        all_records: list[FuelRecord],
+    ) -> list[FuelRecordWithCalculation]:
+        """燃費を計算.
+
+        Args:
+            records: 返却対象のレコード.
+            all_records: 同じ車両の全レコード（給油日時の昇順）.
+
+        Returns:
+            燃費計算結果付きレコードリスト.
+        """
+        # レコードIDから前回レコードへのマッピングを作成
+        prev_record_map: dict[UUID, Optional[FuelRecord]] = {}
+        for i, rec in enumerate(all_records):
+            prev_record_map[rec.id] = all_records[i - 1] if i > 0 else None
+
+        results = []
+        for record in records:
+            prev_record = prev_record_map.get(record.id)
+
+            # 走行距離: 前回データがあれば差分、なければ総走行距離
+            if prev_record:
+                distance_traveled = record.total_mileage - prev_record.total_mileage
+            else:
+                distance_traveled = record.total_mileage
+
+            # 給油量: 総費用 / 単価
+            fuel_amount: Optional[float] = None
+            if record.unit_price > 0:
+                fuel_amount = round(record.total_cost / record.unit_price, 2)
+
+            # 燃費: 走行距離 / 給油量（小数点2桁）
+            fuel_efficiency: Optional[float] = None
+            if fuel_amount and fuel_amount > 0:
+                fuel_efficiency = round(distance_traveled / fuel_amount, 2)
+
+            results.append(
+                FuelRecordWithCalculation(
+                    record=record,
+                    distance_traveled=distance_traveled,
+                    fuel_amount=fuel_amount,
+                    fuel_efficiency=fuel_efficiency,
+                )
+            )
+
+        return results
 
     async def get_fuel_record(
         self,
