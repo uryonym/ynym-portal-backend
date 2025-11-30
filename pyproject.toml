@@ -12,6 +12,7 @@ dependencies = [
     "python-dotenv",
     "python-jose[cryptography]",
     "passlib[bcrypt]",
+    "greenlet>=3.2.4",
 ]
 
 [project.optional-dependencies]
