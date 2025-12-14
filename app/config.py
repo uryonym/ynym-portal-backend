@@ -16,7 +16,14 @@ class Settings(BaseSettings):
     # JWT
     jwt_secret_key: str = "your-secret-key-change-in-production"
     jwt_algorithm: str = "HS256"
-    jwt_expiration_hours: int = 24
+    jwt_expire_minutes: int = 30
+
+    # Google認証
+    google_client_id: str
+    google_client_secret: str
+
+    # URL
+    backend_url: str = "http://localhost:8000"
 
     # 環境
     environment: str = "development"
@@ -26,7 +33,7 @@ class Settings(BaseSettings):
         """Pydantic 設定."""
 
         env_file = ".env"
-        case_sensitive = False
+        case_sensitive = False # 環境変数の大文字小文字を区別しない
 
     @property
     def database_url(self) -> str:
