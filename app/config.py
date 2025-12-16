@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     google_client_secret: str
 
     # URL
+    frontend_url: str = "http://localhost:3000"
     backend_url: str = "http://localhost:8000"
 
     # 環境

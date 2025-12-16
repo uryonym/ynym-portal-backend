@@ -1,10 +1,10 @@
 import httpx
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.schemas.user import UserCreate
-from app.services.user_service import user_service
+from app.services.user_service import UserService
 from app.security.jwt import create_access_token
 
 
@@ -20,7 +20,7 @@ class AuthService:
     GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
     GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
-    async def authenticate_google_user(self, code: str, db: Session) -> str:
+    async def authenticate_google_user(self, code: str, db: AsyncSession) -> str:
         """
         Authenticates a user via Google OAuth code.
         Returns a JWT access token if successful.
@@ -52,14 +52,14 @@ class AuthService:
         user_in = UserCreate(
             email=email, name=name or email.split("@")[0], avatar_url=picture
         )
-        user = user_service.get_or_create(db=db, user_in=user_in)
+        user = await UserService(db).get_or_create(user_in=user_in)
         # --- Step 4 : Create JWT session token ---
         jwt_token = create_access_token(data={"sub": user.email})
         return jwt_token
 
     async def _exchange_code_for_token(self, code: str) -> dict:
         """Exchanges OAuth code for access token."""
-        redirect_uri = f"{settings.backend_url}/api/v1/auth/google/callback"
+        redirect_uri = f"{settings.backend_url}/api/auth/google/callback"
 
         print(f"DEBUG: AuthService token exchange redirect_uri: {redirect_uri}")
 

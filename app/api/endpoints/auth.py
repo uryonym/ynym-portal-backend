@@ -8,7 +8,7 @@ from app.database import get_session
 from app.config import settings
 from app.services.auth_service import auth_service
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def generate_state() -> str:
@@ -19,13 +19,13 @@ def generate_state() -> str:
 async def google_login(request: Request):
     """Initiate Google OAuth2 authentication flow"""
     state = generate_state()
-    redirect_uri = f"{settings.BACKEND_URL}/api/v1/auth/google/callback"
+    redirect_uri = f"{settings.backend_url}/api/auth/google/callback"
 
     print(f"DEBUG: Authorization redirect_uri: {redirect_uri}")
 
     params = {
         "response_type": "code",
-        "client_id": settings.GOOGLE_CLIENT_ID,
+        "client_id": settings.google_client_id,
         "redirect_uri": redirect_uri,
         "scope": "openid email profile",
         "state": state,
@@ -69,12 +69,12 @@ async def google_callback(
         raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")
 
     # Redirect to frontend dashboard with secure cookie
-    response = RedirectResponse(url=f"{settings.FRONTEND_URL}/dashboard")
+    response = RedirectResponse(url=f"{settings.frontend_url}")
     response.set_cookie(
         key="access_token",
         value=jwt_token,
         httponly=True,
-        max_age=60 * settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+        max_age=60 * settings.jwt_expire_minutes,
         secure=False,
         samesite="lax",
         domain="localhost",

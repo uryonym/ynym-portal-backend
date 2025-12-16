@@ -2,9 +2,10 @@
 
 from fastapi import APIRouter
 
-from app.api.endpoints import fuel_records, tasks, vehicles
+from app.api.endpoints import fuel_records, tasks, vehicles, auth
 
 router = APIRouter()
+
 
 # ヘルスチェックエンドポイント（基本的な例）
 @router.get("/health")
@@ -12,6 +13,9 @@ async def health() -> dict:
     """ヘルスチェックエンドポイント."""
     return {"status": "ok"}
 
+
+# 認証エンドポイントを登録
+router.include_router(auth.router)
 
 # タスクエンドポイントを登録
 router.include_router(tasks.router)
