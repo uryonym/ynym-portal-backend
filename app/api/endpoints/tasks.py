@@ -13,6 +13,7 @@ from app.database import get_session
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate
 from app.services.task_service import TaskService
+from app.security.deps import CurrentUser
 from app.utils.exceptions import NotFoundException
 
 # 日本時間（JST）のタイムゾーン設定
@@ -20,16 +21,15 @@ JST = timezone(timedelta(hours=9))
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
-# テスト用の固定ユーザー ID（後続認証実装で JWT から取得）
-TEST_USER_ID = UUID("550e8400-e29b-41d4-a716-446655440000")
-
 
 @router.get("", response_model=dict)
 async def list_tasks(
+    current_user: CurrentUser,
     skip: int = Query(0, ge=0, description="スキップするレコード数"),
     limit: int = Query(100, ge=1, le=1000, description="取得するレコード数"),
     is_completed: Optional[bool] = Query(
-        None, description="完了状態でフィルタ（true: 完了のみ、false: 未完了のみ、指定なし: 全件）"
+        None,
+        description="完了状態でフィルタ（true: 完了のみ、false: 未完了のみ、指定なし: 全件）",
     ),
     db_session: AsyncSession = Depends(get_session),
 ) -> dict:
@@ -52,7 +52,7 @@ async def list_tasks(
     """
     service = TaskService(db_session)
     tasks: List[Task] = await service.list_tasks(
-        user_id=TEST_USER_ID, skip=skip, limit=limit, is_completed=is_completed
+        user_id=current_user.id, skip=skip, limit=limit, is_completed=is_completed
     )
 
     # Task を TaskResponse に変換
@@ -296,7 +296,9 @@ async def update_task(
     }
 
 
-@router.delete("/{task_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{task_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT
+)
 async def delete_task(
     task_id: UUID,
     db_session: AsyncSession = Depends(get_session),
