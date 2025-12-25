@@ -31,7 +31,9 @@ class UserService:
             await self.db_session.refresh(user)
             return user
 
-        user = User(email=user_in.email, name=user_in.name, avatar_url=user_in.avatar_url)
+        user = User(
+            email=user_in.email, name=user_in.name, avatar_url=user_in.avatar_url
+        )
         self.db_session.add(user)
         await self.db_session.commit()
         await self.db_session.refresh(user)

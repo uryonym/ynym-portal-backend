@@ -4,9 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
 from app.schemas.user import UserResponse
 from app.security.jwt import decode_access_token
-from app.services.user_service import user_service
+from app.services.user_service import UserService
 
-router = APIRouter()
+router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/me", response_model=UserResponse)
@@ -30,7 +30,8 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_sess
             )
 
         # ---  Get user from database ----
-        user = user_service.get_by_email(db=db, email=user_email)
+        user_service = UserService(db)
+        user = await user_service.get_by_email(email=user_email)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
