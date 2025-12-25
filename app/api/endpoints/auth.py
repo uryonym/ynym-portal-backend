@@ -7,8 +7,6 @@ from urllib.parse import urlencode
 from app.database import get_session
 from app.config import settings
 from app.services.auth_service import auth_service
-from app.security.deps import CurrentUser
-from app.schemas.user import UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -86,12 +84,6 @@ async def google_callback(
     # ---  Clean up CSRF cookie ---
     response.delete_cookie("oauth_state")
     return response
-
-
-@router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user: CurrentUser) -> UserResponse:
-    """Get current authenticated user information"""
-    return current_user
 
 
 @router.post("/logout")
