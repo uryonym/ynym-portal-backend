@@ -19,7 +19,7 @@ app = FastAPI(
 # CORS ミドルウェア設定
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 開発環境: すべてのオリジンを許可。本番環境では具体的に指定
+    allow_origins=settings.cors_origins,  # 環境変数で指定されたオリジンを許可
     allow_credentials=True,
     allow_methods=["*"],  # すべてのHTTPメソッドを許可
     allow_headers=["*"],  # すべてのヘッダーを許可

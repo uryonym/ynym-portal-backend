@@ -43,7 +43,7 @@ async def google_login(request: Request):
         value=state,
         httponly=True,
         max_age=600,
-        secure=False,
+        secure=settings.environment == "production",
         samesite="lax",
     )
     return response
@@ -70,16 +70,22 @@ async def google_callback(
 
     # Redirect to frontend dashboard with secure cookie
     response = RedirectResponse(url=f"{settings.frontend_url}")
-    response.set_cookie(
-        key="access_token",
-        value=jwt_token,
-        httponly=True,
-        max_age=60 * settings.jwt_expire_minutes,
-        secure=False,
-        samesite="lax",
-        domain="localhost",
-        path="/",
-    )
+
+    cookie_params = {
+        "key": "access_token",
+        "value": jwt_token,
+        "httponly": True,
+        "max_age": 60 * settings.jwt_expire_minutes,
+        "secure": settings.environment == "production",
+        "samesite": "lax",
+        "path": "/",
+    }
+
+    # 開発環境のみlocalhostのdomainを設定
+    if settings.environment == "development":
+        cookie_params["domain"] = "localhost"
+
+    response.set_cookie(**cookie_params)
 
     # ---  Clean up CSRF cookie ---
     response.delete_cookie("oauth_state")
@@ -90,7 +96,17 @@ async def google_callback(
 async def logout():
     """Log out user by clearing their session cookie"""
     response = JSONResponse(content={"message": "Successfully logged out"})
-    response.delete_cookie(
-        key="access_token", httponly=True, samesite="lax", domain="localhost", path="/"
-    )
+
+    delete_params = {
+        "key": "access_token",
+        "httponly": True,
+        "samesite": "lax",
+        "path": "/",
+    }
+
+    # 開発環境のみlocalhostのdomainを設定
+    if settings.environment == "development":
+        delete_params["domain"] = "localhost"
+
+    response.delete_cookie(**delete_params)
     return response

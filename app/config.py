@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
     backend_url: str = "http://localhost:8000"
 
+    # CORS
+    allowed_origins: str = "http://localhost:3000"  # カンマ区切りで複数指定可能
+
     # 環境
     environment: str = "development"
     log_level: str = "DEBUG"
@@ -34,7 +37,7 @@ class Settings(BaseSettings):
         """Pydantic 設定."""
 
         env_file = ".env"
-        case_sensitive = False # 環境変数の大文字小文字を区別しない
+        case_sensitive = False  # 環境変数の大文字小文字を区別しない
 
     @property
     def database_url(self) -> str:
@@ -43,6 +46,11 @@ class Settings(BaseSettings):
             f"postgresql+asyncpg://{self.db_user}:{self.db_password}"
             f"@{self.db_host}:{self.db_port}/{self.db_name}"
         )
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """カンマ区切りの文字列をリストに変換."""
+        return [origin.strip() for origin in self.allowed_origins.split(",")]
 
 
 settings = Settings()
