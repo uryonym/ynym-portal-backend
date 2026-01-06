@@ -1,4 +1,4 @@
-"""Vehicle（車）関連エンドポイント."""
+"""車両関連エンドポイント."""
 
 import logging
 from datetime import datetime, timedelta, timezone
@@ -16,6 +16,7 @@ from app.database import get_session
 from app.models.vehicle import Vehicle
 from app.schemas.vehicle import VehicleCreate, VehicleResponse, VehicleUpdate
 from app.services.vehicle_service import VehicleService
+from app.security.deps import CurrentUser
 from app.utils.exceptions import NotFoundException
 
 # 日本時間（JST）のタイムゾーン設定
@@ -23,12 +24,10 @@ JST = timezone(timedelta(hours=9))
 
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
 
-# テスト用の固定ユーザー ID（後続認証実装で JWT から取得）
-TEST_USER_ID = UUID("550e8400-e29b-41d4-a716-446655440000")
-
 
 @router.get("", response_model=dict)
 async def list_vehicles(
+    current_user: CurrentUser,
     skip: int = Query(0, ge=0, description="スキップするレコード数"),
     limit: int = Query(100, ge=1, le=1000, description="取得するレコード数"),
     db_session: AsyncSession = Depends(get_session),
@@ -50,7 +49,7 @@ async def list_vehicles(
     """
     service = VehicleService(db_session)
     vehicles: List[Vehicle] = await service.list_vehicles(
-        user_id=TEST_USER_ID, skip=skip, limit=limit
+        user_id=current_user.id, skip=skip, limit=limit
     )
 
     # Vehicle を VehicleResponse に変換
@@ -65,8 +64,12 @@ async def list_vehicles(
             year=vehicle.year,
             number=vehicle.number,
             tank_capacity=vehicle.tank_capacity,
-            created_at=vehicle.created_at.isoformat() if vehicle.created_at else datetime.now(JST).isoformat(),
-            updated_at=vehicle.updated_at.isoformat() if vehicle.updated_at else datetime.now(JST).isoformat(),
+            created_at=vehicle.created_at.isoformat()
+            if vehicle.created_at
+            else datetime.now(JST).isoformat(),
+            updated_at=vehicle.updated_at.isoformat()
+            if vehicle.updated_at
+            else datetime.now(JST).isoformat(),
         )
         for vehicle in vehicles
     ]
@@ -79,6 +82,7 @@ async def list_vehicles(
 
 @router.post("", response_model=None, status_code=status.HTTP_201_CREATED)
 async def create_vehicle(
+    current_user: CurrentUser,
     request: Request,
     db_session: AsyncSession = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
@@ -132,7 +136,9 @@ async def create_vehicle(
         )
 
     service = VehicleService(db_session)
-    created_vehicle: Vehicle = await service.create_vehicle(vehicle_create, TEST_USER_ID)
+    created_vehicle: Vehicle = await service.create_vehicle(
+        vehicle_create, current_user.id
+    )
 
     # Vehicle を VehicleResponse に変換
     vehicle_response = VehicleResponse(
@@ -145,8 +151,12 @@ async def create_vehicle(
         year=created_vehicle.year,
         number=created_vehicle.number,
         tank_capacity=created_vehicle.tank_capacity,
-        created_at=created_vehicle.created_at.isoformat() if created_vehicle.created_at else datetime.now(JST).isoformat(),
-        updated_at=created_vehicle.updated_at.isoformat() if created_vehicle.updated_at else datetime.now(JST).isoformat(),
+        created_at=created_vehicle.created_at.isoformat()
+        if created_vehicle.created_at
+        else datetime.now(JST).isoformat(),
+        updated_at=created_vehicle.updated_at.isoformat()
+        if created_vehicle.updated_at
+        else datetime.now(JST).isoformat(),
     )
 
     return {
@@ -157,6 +167,7 @@ async def create_vehicle(
 
 @router.get("/{vehicle_id}", response_model=None)
 async def get_vehicle(
+    current_user: CurrentUser,
     vehicle_id: UUID,
     db_session: AsyncSession = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
@@ -179,7 +190,7 @@ async def get_vehicle(
     """
     service = VehicleService(db_session)
     try:
-        vehicle: Vehicle = await service.get_vehicle(vehicle_id, TEST_USER_ID)
+        vehicle: Vehicle = await service.get_vehicle(vehicle_id, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -200,8 +211,12 @@ async def get_vehicle(
         year=vehicle.year,
         number=vehicle.number,
         tank_capacity=vehicle.tank_capacity,
-        created_at=vehicle.created_at.isoformat() if vehicle.created_at else datetime.now(JST).isoformat(),
-        updated_at=vehicle.updated_at.isoformat() if vehicle.updated_at else datetime.now(JST).isoformat(),
+        created_at=vehicle.created_at.isoformat()
+        if vehicle.created_at
+        else datetime.now(JST).isoformat(),
+        updated_at=vehicle.updated_at.isoformat()
+        if vehicle.updated_at
+        else datetime.now(JST).isoformat(),
     )
 
     return {
@@ -212,6 +227,7 @@ async def get_vehicle(
 
 @router.put("/{vehicle_id}", response_model=None)
 async def update_vehicle(
+    current_user: CurrentUser,
     vehicle_id: UUID,
     request: Request,
     db_session: AsyncSession = Depends(get_session),
@@ -268,7 +284,7 @@ async def update_vehicle(
     service = VehicleService(db_session)
     try:
         updated_vehicle: Vehicle = await service.update_vehicle(
-            vehicle_id, vehicle_update, TEST_USER_ID
+            vehicle_id, vehicle_update, current_user.id
         )
     except NotFoundException as e:
         return JSONResponse(
@@ -290,8 +306,12 @@ async def update_vehicle(
         year=updated_vehicle.year,
         number=updated_vehicle.number,
         tank_capacity=updated_vehicle.tank_capacity,
-        created_at=updated_vehicle.created_at.isoformat() if updated_vehicle.created_at else datetime.now(JST).isoformat(),
-        updated_at=updated_vehicle.updated_at.isoformat() if updated_vehicle.updated_at else datetime.now(JST).isoformat(),
+        created_at=updated_vehicle.created_at.isoformat()
+        if updated_vehicle.created_at
+        else datetime.now(JST).isoformat(),
+        updated_at=updated_vehicle.updated_at.isoformat()
+        if updated_vehicle.updated_at
+        else datetime.now(JST).isoformat(),
     )
 
     return {
@@ -300,8 +320,11 @@ async def update_vehicle(
     }
 
 
-@router.delete("/{vehicle_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{vehicle_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT
+)
 async def delete_vehicle(
+    current_user: CurrentUser,
     vehicle_id: UUID,
     db_session: AsyncSession = Depends(get_session),
 ) -> Union[None, JSONResponse]:
@@ -321,7 +344,7 @@ async def delete_vehicle(
     """
     service = VehicleService(db_session)
     try:
-        await service.delete_vehicle(vehicle_id, TEST_USER_ID)
+        await service.delete_vehicle(vehicle_id, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,

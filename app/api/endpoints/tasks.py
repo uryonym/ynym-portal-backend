@@ -1,4 +1,4 @@
-"""Task 関連エンドポイント."""
+"""タスク関連エンドポイント."""
 
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Union
@@ -80,6 +80,7 @@ async def list_tasks(
 
 @router.post("", response_model=None, status_code=status.HTTP_201_CREATED)
 async def create_task(
+    current_user: CurrentUser,
     request: Request,
     db_session: AsyncSession = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
@@ -131,7 +132,7 @@ async def create_task(
         )
 
     service = TaskService(db_session)
-    created_task: Task = await service.create_task(task_create, TEST_USER_ID)
+    created_task: Task = await service.create_task(task_create, current_user.id)
 
     # Task を TaskResponse に変換
     task_response = TaskResponse(
@@ -155,6 +156,7 @@ async def create_task(
 
 @router.get("/{task_id}", response_model=None)
 async def get_task(
+    current_user: CurrentUser,
     task_id: UUID,
     db_session: AsyncSession = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
@@ -177,7 +179,7 @@ async def get_task(
     """
     service = TaskService(db_session)
     try:
-        task: Task = await service.get_task(task_id, TEST_USER_ID)
+        task: Task = await service.get_task(task_id, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -209,6 +211,7 @@ async def get_task(
 
 @router.put("/{task_id}", response_model=None)
 async def update_task(
+    current_user: CurrentUser,
     task_id: UUID,
     request: Request,
     db_session: AsyncSession = Depends(get_session),
@@ -265,7 +268,7 @@ async def update_task(
     service = TaskService(db_session)
     try:
         updated_task: Task = await service.update_task(
-            task_id, task_update, TEST_USER_ID
+            task_id, task_update, current_user.id
         )
     except NotFoundException as e:
         return JSONResponse(
@@ -300,6 +303,7 @@ async def update_task(
     "/{task_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT
 )
 async def delete_task(
+    current_user: CurrentUser,
     task_id: UUID,
     db_session: AsyncSession = Depends(get_session),
 ) -> Union[None, JSONResponse]:
@@ -319,7 +323,7 @@ async def delete_task(
     """
     service = TaskService(db_session)
     try:
-        await service.delete_task(task_id, TEST_USER_ID)
+        await service.delete_task(task_id, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
