@@ -61,7 +61,9 @@ class FuelRecordService:
         if vehicle_id:
             query = query.where(FuelRecord.vehicle_id == vehicle_id)
 
-        query = query.order_by(desc(FuelRecord.refuel_datetime)).limit(limit).offset(offset)
+        query = (
+            query.order_by(desc(FuelRecord.refuel_datetime)).limit(limit).offset(offset)
+        )
 
         result = await self.db_session.execute(query)
         records = list(result.scalars().all())
@@ -192,7 +194,8 @@ class FuelRecordService:
             gas_station_name=fuel_record_create.gas_station_name,
         )
         self.db_session.add(fuel_record)
-        await self.db_session.flush()
+        await self.db_session.commit()
+        await self.db_session.refresh(fuel_record)
         return fuel_record
 
     async def update_fuel_record(
@@ -221,7 +224,8 @@ class FuelRecordService:
                 setattr(fuel_record, key, value)
 
         self.db_session.add(fuel_record)
-        await self.db_session.flush()
+        await self.db_session.commit()
+        await self.db_session.refresh(fuel_record)
         return fuel_record
 
     async def delete_fuel_record(
@@ -247,5 +251,5 @@ class FuelRecordService:
         JST = timezone(timedelta(hours=9))
         fuel_record.deleted_at = datetime.now(JST)
         self.db_session.add(fuel_record)
-        await self.db_session.flush()
+        await self.db_session.commit()
         return True
