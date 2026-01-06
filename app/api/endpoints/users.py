@@ -1,3 +1,5 @@
+"""ユーザー関連エンドポイント."""
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 

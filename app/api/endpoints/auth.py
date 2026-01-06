@@ -1,3 +1,5 @@
+"""認証関連エンドポイント."""
+
 import secrets
 from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
