@@ -67,10 +67,14 @@ class TaskService:
         if is_completed is not None:
             stmt = stmt.where(col(Task.is_completed) == is_completed)
 
-        stmt = stmt.order_by(
-            nulls_last(asc(col(Task.due_date))),
-            asc(col(Task.created_at)),
-        ).offset(skip).limit(limit)
+        stmt = (
+            stmt.order_by(
+                nulls_last(asc(col(Task.due_date))),
+                asc(col(Task.created_at)),
+            )
+            .offset(skip)
+            .limit(limit)
+        )
 
         result = await self.db_session.execute(stmt)
         return list(result.scalars().all())
@@ -162,6 +166,19 @@ class TaskService:
 
         # 更新されたフィールドのみ適用（部分更新）
         update_data = task_update.model_dump(exclude_unset=True)
+
+        # is_completed が True に変更された場合、completed_at を自動設定
+        if "is_completed" in update_data:
+            if update_data["is_completed"] and not task.is_completed:
+                # 未完了→完了に変更された場合
+                from datetime import datetime, timedelta, timezone
+
+                JST = timezone(timedelta(hours=9))
+                update_data["completed_at"] = datetime.now(JST)
+            elif not update_data["is_completed"] and task.is_completed:
+                # 完了→未完了に変更された場合、completed_at をクリア
+                update_data["completed_at"] = None
+
         for field, value in update_data.items():
             setattr(task, field, value)
 

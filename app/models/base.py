@@ -29,6 +29,7 @@ class TimestampModel(SQLModel):
     updated_at: Optional[datetime] = Field(
         default_factory=lambda: datetime.now(JST),
         sa_type=DateTime(timezone=True),
+        sa_column_kwargs={"onupdate": lambda: datetime.now(JST)},
         nullable=False,
         description="レコード最終更新日時（日本時間 JST）",
     )
