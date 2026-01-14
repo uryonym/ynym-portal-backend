@@ -1,6 +1,5 @@
 """燃費記録関連エンドポイント."""
 
-from datetime import timedelta, timezone
 from typing import Union
 from uuid import UUID
 
@@ -18,9 +17,6 @@ from app.schemas.fuel_record import (
 from app.security.deps import CurrentUser
 from app.services.fuel_record_service import FuelRecordService
 from app.utils.exceptions import NotFoundException
-
-# 日本時間（JST）のタイムゾーン設定
-JST = timezone(timedelta(hours=9))
 
 router = APIRouter(
     prefix="/fuel-records",

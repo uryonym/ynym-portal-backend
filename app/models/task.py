@@ -1,6 +1,6 @@
 """タスクモデル."""
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 
@@ -8,9 +8,6 @@ from sqlalchemy import DateTime
 from sqlmodel import Field
 
 from app.models.base import UUIDModel
-
-# 日本時間（JST）のタイムゾーン設定
-JST = timezone(timedelta(hours=9))
 
 
 class Task(UUIDModel, table=True):

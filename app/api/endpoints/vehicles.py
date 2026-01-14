@@ -1,6 +1,6 @@
 """車両関連エンドポイント."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from typing import List, Union
 from uuid import UUID
 
@@ -10,14 +10,12 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
+from app.models.base import JST
 from app.models.vehicle import Vehicle
 from app.schemas.vehicle import VehicleCreate, VehicleResponse, VehicleUpdate
 from app.services.vehicle_service import VehicleService
 from app.security.deps import CurrentUser
 from app.utils.exceptions import NotFoundException
-
-# 日本時間（JST）のタイムゾーン設定
-JST = timezone(timedelta(hours=9))
 
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
 

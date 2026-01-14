@@ -171,12 +171,12 @@ class VehicleService:
         Raises:
             NotFoundException: 車が見つかりません
         """
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime
+        from app.models.base import JST
 
         vehicle = await self.get_vehicle(vehicle_id, user_id)
 
         # 論理削除
-        JST = timezone(timedelta(hours=9))
         vehicle.deleted_at = datetime.now(JST)
 
         self.db_session.add(vehicle)

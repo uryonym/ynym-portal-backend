@@ -246,9 +246,9 @@ class FuelRecordService:
         if not fuel_record:
             return False
 
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime
+        from app.models.base import JST
 
-        JST = timezone(timedelta(hours=9))
         fuel_record.deleted_at = datetime.now(JST)
         self.db_session.add(fuel_record)
         await self.db_session.commit()

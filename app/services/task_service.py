@@ -171,9 +171,9 @@ class TaskService:
         if "is_completed" in update_data:
             if update_data["is_completed"] and not task.is_completed:
                 # 未完了→完了に変更された場合
-                from datetime import datetime, timedelta, timezone
+                from datetime import datetime
+                from app.models.base import JST
 
-                JST = timezone(timedelta(hours=9))
                 update_data["completed_at"] = datetime.now(JST)
             elif not update_data["is_completed"] and task.is_completed:
                 # 完了→未完了に変更された場合、completed_at をクリア
