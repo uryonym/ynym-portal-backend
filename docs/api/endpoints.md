@@ -164,6 +164,260 @@ Health check endpoint to verify the API is running.
 
 ## Users
 
+## Notes
+
+### GET /api/notes
+
+ノート一覧を取得します。
+
+**説明:**
+
+ユーザーにひも付くノートを取得します。既定の並び順はカテゴリ名の昇順、次にタイトルの昇順で、カテゴリ未設定のノートは末尾に並びます。
+
+**Query Parameters:**
+
+| Parameter | Type    | Default | Description            |
+| --------- | ------- | ------- | ---------------------- |
+| skip      | integer | 0       | スキップするレコード数 |
+| limit     | integer | 100     | 取得するレコード数     |
+
+**Response (200 OK):**
+
+```json
+{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440100",
+      "user_id": "550e8400-e29b-41d4-a716-446655440000",
+      "category_id": "550e8400-e29b-41d4-a716-446655440010",
+      "title": "買い物メモ",
+      "body": "牛乳とパン",
+      "created_at": "2026-02-10T10:00:00+09:00",
+      "updated_at": "2026-02-10T10:00:00+09:00"
+    }
+  ],
+  "message": "ノート一覧を取得しました"
+}
+```
+
+---
+
+### POST /api/notes
+
+新規ノートを作成します。
+
+**Request Body:**
+
+| Field       | Type   | Required | Description           |
+| ----------- | ------ | -------- | --------------------- |
+| title       | string | Yes      | タイトル (1-255 文字) |
+| body        | string | Yes      | 本文                  |
+| category_id | string | No       | カテゴリ ID (UUID)    |
+
+**Response (201 Created):**
+
+```json
+{
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440101",
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "category_id": null,
+    "title": "新しいノート",
+    "body": "本文",
+    "created_at": "2026-02-10T10:05:00+09:00",
+    "updated_at": "2026-02-10T10:05:00+09:00"
+  },
+  "message": "ノートが作成されました"
+}
+```
+
+---
+
+### GET /api/notes/{note_id}
+
+ノートを取得します。
+
+**Response (200 OK):**
+
+```json
+{
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440100",
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "category_id": null,
+    "title": "買い物メモ",
+    "body": "牛乳とパン",
+    "created_at": "2026-02-10T10:00:00+09:00",
+    "updated_at": "2026-02-10T10:00:00+09:00"
+  },
+  "message": "ノートが取得されました"
+}
+```
+
+---
+
+### PUT /api/notes/{note_id}
+
+ノートを更新します。
+
+**Request Body:**
+
+| Field       | Type   | Required | Description        |
+| ----------- | ------ | -------- | ------------------ |
+| title       | string | No       | タイトル           |
+| body        | string | No       | 本文               |
+| category_id | string | No       | カテゴリ ID (UUID) |
+
+**Response (200 OK):**
+
+```json
+{
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440100",
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "category_id": "550e8400-e29b-41d4-a716-446655440010",
+    "title": "更新後タイトル",
+    "body": "更新後本文",
+    "created_at": "2026-02-10T10:00:00+09:00",
+    "updated_at": "2026-02-10T10:10:00+09:00"
+  },
+  "message": "ノートが更新されました"
+}
+```
+
+---
+
+### DELETE /api/notes/{note_id}
+
+ノートを削除します。
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "ノートが削除されました"
+}
+```
+
+---
+
+### GET /api/note-categories
+
+カテゴリ一覧を取得します。
+
+**Query Parameters:**
+
+| Parameter | Type    | Default | Description            |
+| --------- | ------- | ------- | ---------------------- |
+| skip      | integer | 0       | スキップするレコード数 |
+| limit     | integer | 100     | 取得するレコード数     |
+
+**Response (200 OK):**
+
+```json
+{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440010",
+      "user_id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "仕事",
+      "created_at": "2026-02-10T09:00:00+09:00",
+      "updated_at": "2026-02-10T09:00:00+09:00"
+    }
+  ],
+  "message": "カテゴリ一覧を取得しました"
+}
+```
+
+---
+
+### POST /api/note-categories
+
+新規カテゴリを作成します。
+
+**Request Body:**
+
+| Field | Type   | Required | Description             |
+| ----- | ------ | -------- | ----------------------- |
+| name  | string | Yes      | カテゴリ名 (1-255 文字) |
+
+**Response (201 Created):**
+
+```json
+{
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440010",
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "仕事",
+    "created_at": "2026-02-10T09:00:00+09:00",
+    "updated_at": "2026-02-10T09:00:00+09:00"
+  },
+  "message": "カテゴリが作成されました"
+}
+```
+
+---
+
+### GET /api/note-categories/{category_id}
+
+カテゴリを取得します。
+
+**Response (200 OK):**
+
+```json
+{
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440010",
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "仕事",
+    "created_at": "2026-02-10T09:00:00+09:00",
+    "updated_at": "2026-02-10T09:00:00+09:00"
+  },
+  "message": "カテゴリが取得されました"
+}
+```
+
+---
+
+### PUT /api/note-categories/{category_id}
+
+カテゴリを更新します。
+
+**Request Body:**
+
+| Field | Type   | Required | Description |
+| ----- | ------ | -------- | ----------- |
+| name  | string | No       | カテゴリ名  |
+
+**Response (200 OK):**
+
+```json
+{
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440010",
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "更新後カテゴリ",
+    "created_at": "2026-02-10T09:00:00+09:00",
+    "updated_at": "2026-02-10T09:10:00+09:00"
+  },
+  "message": "カテゴリが更新されました"
+}
+```
+
+---
+
+### DELETE /api/note-categories/{category_id}
+
+カテゴリを削除します。
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "カテゴリが削除されました"
+}
+```
+
 (Documentation to be added as endpoints are implemented)
 
 ---
