@@ -2,7 +2,15 @@
 
 from fastapi import APIRouter
 
-from app.api.endpoints import fuel_records, tasks, vehicles, auth, users
+from app.api.endpoints import (
+    auth,
+    fuel_records,
+    note_categories,
+    notes,
+    tasks,
+    users,
+    vehicles,
+)
 
 router = APIRouter()
 
@@ -28,3 +36,9 @@ router.include_router(vehicles.router)
 
 # 燃費記録エンドポイントを登録
 router.include_router(fuel_records.router)
+
+# ノートカテゴリエンドポイントを登録
+router.include_router(note_categories.router)
+
+# ノートエンドポイントを登録
+router.include_router(notes.router)
