@@ -2,11 +2,14 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from datetime import date
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 from uuid import UUID
 
 from app.main import app
+from app.models.base import JST
+from app.models.user import User
+from app.security.deps import get_current_user
 
 # 日本標準時 (JST)
 JST = ZoneInfo("Asia/Tokyo")
@@ -72,3 +75,21 @@ def task_fixtures() -> dict:
             "due_date": date(2025, 11, 15),
         },
     }
+
+
+@pytest.fixture(autouse=True)
+def override_current_user_dependency():
+    """認証依存をテスト用ユーザーで上書き."""
+
+    async def _override_current_user() -> User:
+        return User(
+            id=UUID("550e8400-e29b-41d4-a716-446655440000"),
+            email="test@example.com",
+            name="テストユーザー",
+            avatar_url=None,
+            created_at=datetime.now(JST),
+        )
+
+    app.dependency_overrides[get_current_user] = _override_current_user
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
