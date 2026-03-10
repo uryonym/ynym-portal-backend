@@ -18,6 +18,15 @@ from app.utils.exceptions import NotFoundException
 router = APIRouter(prefix="/notes", tags=["notes"])
 
 
+def _not_found_message(error: NotFoundException) -> str:
+    """NotFoundExceptionの内容に応じてメッセージを返す."""
+    return (
+        "カテゴリが見つかりません"
+        if "カテゴリ ID" in str(error)
+        else "ノートが見つかりません"
+    )
+
+
 @router.get("", response_model=dict)
 async def list_notes(
     current_user: CurrentUser,
@@ -79,7 +88,16 @@ async def create_note(
         )
 
     service = NoteService(db_session)
-    created_note = await service.create_note(note_create, current_user.id)
+    try:
+        created_note = await service.create_note(note_create, current_user.id)
+    except NotFoundException as e:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                "error": str(e),
+                "message": _not_found_message(e),
+            },
+        )
 
     return {
         "data": NoteResponse.model_validate(created_note),
@@ -154,7 +172,7 @@ async def update_note(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
                 "error": str(e),
-                "message": "ノートが見つかりません",
+                "message": _not_found_message(e),
             },
         )
 

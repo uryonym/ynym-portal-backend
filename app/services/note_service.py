@@ -67,8 +67,23 @@ class NoteService:
             raise NotFoundException(f"ノート ID {note_id} が見つかりません")
         return note
 
+    async def _validate_category(self, category_id: UUID, user_id: UUID) -> None:
+        """カテゴリがユーザーに属して存在することを検証."""
+        stmt = (
+            select(NoteCategory)
+            .where(col(NoteCategory.id) == category_id)
+            .where(col(NoteCategory.user_id) == user_id)
+        )
+        result = await self.db_session.execute(stmt)
+        category = result.scalars().one_or_none()
+        if not category:
+            raise NotFoundException(f"カテゴリ ID {category_id} が見つかりません")
+
     async def create_note(self, note_create: NoteCreate, user_id: UUID) -> Note:
         """ノートを作成."""
+        if note_create.category_id is not None:
+            await self._validate_category(note_create.category_id, user_id)
+
         note = Note(
             user_id=user_id,
             title=note_create.title,
@@ -89,6 +104,10 @@ class NoteService:
         """ノートを更新（部分更新）."""
         note = await self.get_note(note_id, user_id)
         update_data = note_update.model_dump(exclude_unset=True)
+
+        if "category_id" in update_data and update_data["category_id"] is not None:
+            await self._validate_category(update_data["category_id"], user_id)
+
         for field, value in update_data.items():
             setattr(note, field, value)
         self.db_session.add(note)

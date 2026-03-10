@@ -124,6 +124,31 @@ class TestNoteServiceCreateNote:
         mock_db_session.commit.assert_called_once()
         mock_db_session.refresh.assert_called_once()
 
+    async def test_create_note_with_invalid_category_fails(
+        self, mock_db_session: AsyncMock
+    ) -> None:
+        """存在しないカテゴリを指定した場合は例外."""
+        invalid_category_id = UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        note_create = NoteCreate(
+            title="タイトル",
+            body="本文",
+            category_id=invalid_category_id,
+        )
+
+        mock_result = MagicMock()
+        mock_result.scalars().one_or_none.return_value = None
+        mock_db_session.execute = AsyncMock(return_value=mock_result)
+        mock_db_session.add = MagicMock()
+        mock_db_session.commit = AsyncMock()
+
+        service = NoteService(mock_db_session)
+
+        with pytest.raises(NotFoundException):
+            await service.create_note(note_create, TEST_USER_ID)
+
+        mock_db_session.add.assert_not_called()
+        mock_db_session.commit.assert_not_called()
+
 
 class TestNoteServiceUpdateNote:
     """NoteService.update_note のテストケース."""
@@ -150,6 +175,31 @@ class TestNoteServiceUpdateNote:
 
         assert updated.title == "新タイトル"
         assert updated.body == "旧本文"
+
+    async def test_update_note_with_invalid_category_fails(
+        self, mock_db_session: AsyncMock
+    ) -> None:
+        """存在しないカテゴリを指定した更新は例外."""
+        note_id = UUID("55555555-5555-5555-5555-555555555555")
+        invalid_category_id = UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+
+        note = MagicMock(spec=Note)
+        note.id = note_id
+
+        mock_result = MagicMock()
+        mock_result.scalars().one_or_none.return_value = None
+        mock_db_session.execute = AsyncMock(return_value=mock_result)
+        mock_db_session.commit = AsyncMock()
+
+        service = NoteService(mock_db_session)
+        service.get_note = AsyncMock(return_value=note)
+
+        note_update = NoteUpdate(category_id=invalid_category_id)
+
+        with pytest.raises(NotFoundException):
+            await service.update_note(note_id, note_update, TEST_USER_ID)
+
+        mock_db_session.commit.assert_not_called()
 
 
 class TestNoteServiceDeleteNote:
