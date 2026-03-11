@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 from jose import JWTError, jwt
-from app.config import settings
+from app.core.config import settings
 
 
 def create_access_token(

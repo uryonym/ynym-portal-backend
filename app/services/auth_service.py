@@ -2,7 +2,7 @@ import httpx
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
+from app.core.config import settings
 from app.schemas.user import UserCreate
 from app.services.user_service import UserService
 from app.security.jwt import create_access_token

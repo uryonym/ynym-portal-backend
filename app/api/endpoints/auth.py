@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from urllib.parse import urlencode
 
 from app.database import get_session
-from app.config import settings
+from app.core.config import settings
 from app.services.auth_service import auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])

@@ -3,7 +3,7 @@
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from app.config import settings
+from app.core.config import settings
 
 # 非同期エンジンを作成
 engine: AsyncEngine = create_async_engine(
