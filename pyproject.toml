@@ -5,11 +5,13 @@ description = "FastAPI backend system for ynym portal"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi[standard]",
+    "fastapi[standard]>=0.135.0",
+    "sqlalchemy>=2.0.48",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.13.1",
+    "psycopg[binary]>=3.3.3",
     "sqlmodel",
     "asyncpg",
-    "pydantic-settings",
-    "python-dotenv",
     "python-jose[cryptography]",
     "passlib[bcrypt]",
     "greenlet>=3.2.4",
