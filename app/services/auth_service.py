@@ -59,7 +59,7 @@ class AuthService:
 
     async def _exchange_code_for_token(self, code: str) -> dict:
         """Exchanges OAuth code for access token."""
-        redirect_uri = f"{settings.backend_url}/api/auth/google/callback"
+        redirect_uri = f"{settings.BACKEND_URL}/api/auth/google/callback"
 
         print(f"DEBUG: AuthService token exchange redirect_uri: {redirect_uri}")
 
@@ -67,8 +67,8 @@ class AuthService:
             response = await client.post(
                 self.GOOGLE_TOKEN_URL,
                 data={
-                    "client_id": settings.google_client_id,
-                    "client_secret": settings.google_client_secret,
+                    "client_id": settings.GOOGLE_CLIENT_ID,
+                    "client_secret": settings.GOOGLE_CLIENT_SECRET,
                     "code": code,
                     "grant_type": "authorization_code",
                     "redirect_uri": redirect_uri,

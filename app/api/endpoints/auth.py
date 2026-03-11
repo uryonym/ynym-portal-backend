@@ -21,13 +21,13 @@ def generate_state() -> str:
 async def google_login(request: Request):
     """Initiate Google OAuth2 authentication flow"""
     state = generate_state()
-    redirect_uri = f"{settings.backend_url}/api/auth/google/callback"
+    redirect_uri = f"{settings.BACKEND_URL}/api/auth/google/callback"
 
     print(f"DEBUG: Authorization redirect_uri: {redirect_uri}")
 
     params = {
         "response_type": "code",
-        "client_id": settings.google_client_id,
+        "client_id": settings.GOOGLE_CLIENT_ID,
         "redirect_uri": redirect_uri,
         "scope": "openid email profile",
         "state": state,
@@ -45,7 +45,7 @@ async def google_login(request: Request):
         value=state,
         httponly=True,
         max_age=600,
-        secure=settings.environment == "production",
+        secure=settings.ENVIRONMENT == "production",
         samesite="lax",
     )
     return response
@@ -71,20 +71,20 @@ async def google_callback(
         raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")
 
     # Redirect to frontend dashboard with secure cookie
-    response = RedirectResponse(url=f"{settings.frontend_url}")
+    response = RedirectResponse(url=f"{settings.FRONTEND_URL}")
 
     cookie_params = {
         "key": "access_token",
         "value": jwt_token,
         "httponly": True,
-        "max_age": 60 * settings.jwt_expire_minutes,
-        "secure": settings.environment == "production",
+        "max_age": 60 * settings.JWT_EXPIRE_MINUTES,
+        "secure": settings.ENVIRONMENT == "production",
         "samesite": "lax",
         "path": "/",
     }
 
     # 開発環境のみlocalhostのdomainを設定
-    if settings.environment == "development":
+    if settings.ENVIRONMENT == "development":
         cookie_params["domain"] = "localhost"
 
     response.set_cookie(**cookie_params)
@@ -107,7 +107,7 @@ async def logout():
     }
 
     # 開発環境のみlocalhostのdomainを設定
-    if settings.environment == "development":
+    if settings.ENVIRONMENT == "development":
         delete_params["domain"] = "localhost"
 
     response.delete_cookie(**delete_params)
