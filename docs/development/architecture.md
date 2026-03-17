@@ -63,7 +63,7 @@ The application follows a layered architecture:
 - Custom exceptions
 - Logging configuration
 
-### Configuration (`app/config.py`)
+### Configuration (`app/core/config.py`)
 
 - Environment-based settings
 - Uses Pydantic Settings

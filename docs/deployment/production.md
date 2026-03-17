@@ -12,14 +12,41 @@ This guide covers deploying the ynym Portal Backend to production.
 
 ### 1. Set Production Environment Variables
 
-Create `.env` file with production values:
+`.env.sample` を `.env` にコピーして本番の値を設定します:
+
+```bash
+cp .env.sample .env
+```
+
+`.env` の設定例:
 
 ```env
+# データベース
+DB_HOST=db-host
+DB_PORT=5432
+DB_NAME=ynym_db
+DB_USER=ynym_user
+DB_PASSWORD=<strong-password>
+
+# JWT
+JWT_SECRET_KEY=<strong-random-secret-key>
+JWT_ALGORITHM=HS256
+JWT_EXPIRE_MINUTES=1440
+
+# Google認証
+GOOGLE_CLIENT_ID=<your-google-client-id>
+GOOGLE_CLIENT_SECRET=<your-google-client-secret>
+
+# URL設定
+FRONTEND_URL=https://your-frontend-domain.com
+BACKEND_URL=https://api.your-domain.com
+
+# CORS設定 (カンマ区切りで複数指定可能)
+ALLOWED_ORIGINS=https://your-frontend-domain.com
+
+# 環境
 ENVIRONMENT=production
 LOG_LEVEL=INFO
-DATABASE_URL=postgresql+asyncpg://user:password@db-host:5432/ynym_db
-JWT_SECRET_KEY=<strong-random-secret-key>
-JWT_EXPIRATION_HOURS=24
 ```
 
 **Important**: Generate a strong secret key for JWT:
@@ -32,26 +59,17 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 ### Option 1: Docker (Recommended)
 
-Create a `Dockerfile`:
-
-```dockerfile
-FROM python:3.12-slim
-
-WORKDIR /app
-
-COPY pyproject.toml uv.lock* ./
-RUN pip install uv && uv sync --no-dev
-
-COPY . .
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-Build and run:
+プロジェクトルートの `Dockerfile` を使用してビルド・起動します:
 
 ```bash
 docker build -t ynym-portal-backend .
-docker run -p 8000:8000 --env-file .env ynym-portal-backend
+docker run -p 80:80 --env-file .env ynym-portal-backend
+```
+
+`compose.yml` を使用する場合:
+
+```bash
+docker compose up -d
 ```
 
 ### Option 2: Direct Server Deployment

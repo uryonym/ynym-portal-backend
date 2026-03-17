@@ -16,10 +16,10 @@ uv sync
 
 ### 2. Set up environment variables
 
-Copy `.env.example` to `.env` and update the values:
+Copy `.env.sample` to `.env` and update the values:
 
 ```bash
-cp .env.example .env
+cp .env.sample .env
 ```
 
 ### 3. Initialize database
