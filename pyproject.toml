@@ -5,7 +5,7 @@ description = "FastAPI backend system for ynym portal"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi[standard]>=0.135.0",
+    "fastapi[standard]==0.135.*",
     "sqlalchemy>=2.0.48",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.13.1",
@@ -17,7 +17,7 @@ dependencies = [
     "greenlet>=3.2.4",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest",
     "pytest-asyncio",
