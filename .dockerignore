@@ -1,3 +1,21 @@
-.venv
-.env.example
+# 環境変数ファイル
+.env.sample
+
+# ignore ファイル
+.dockerignore
 .gitignore
+
+# プロジェクト設定ファイル
+.git/
+.github/
+.vscode/
+docs/
+openspec/
+README.md
+
+# Python 関連
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+tests/

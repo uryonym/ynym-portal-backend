@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import settings
+from app.core.config import settings
 from app.api.router import router
 from app.utils.logging import setup_logging
 
@@ -19,7 +19,7 @@ app = FastAPI(
 # CORS ミドルウェア設定
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,  # 環境変数で指定されたオリジンを許可
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],  # すべてのHTTPメソッドを許可
     allow_headers=["*"],  # すべてのヘッダーを許可
@@ -32,4 +32,4 @@ app.include_router(router, prefix="/api")
 @app.get("/health")
 async def health_check() -> dict:
     """ヘルスチェックエンドポイント."""
-    return {"status": "ok", "environment": settings.environment}
+    return {"status": "ok", "environment": settings.ENVIRONMENT}
