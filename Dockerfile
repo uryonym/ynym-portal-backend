@@ -15,4 +15,4 @@ WORKDIR /app
 RUN uv sync --locked --no-cache
 
 # アプリケーションを起動
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
