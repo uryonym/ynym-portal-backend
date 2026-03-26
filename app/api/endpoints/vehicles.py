@@ -4,10 +4,10 @@ from datetime import datetime
 from typing import List, Union
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Body, Depends, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.database import get_session
 from app.models.base import JST
@@ -21,11 +21,11 @@ router = APIRouter(prefix="/vehicles", tags=["vehicles"])
 
 
 @router.get("", response_model=dict)
-async def list_vehicles(
+def list_vehicles(
     current_user: CurrentUser,
     skip: int = Query(0, ge=0, description="スキップするレコード数"),
     limit: int = Query(100, ge=1, le=1000, description="取得するレコード数"),
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Session = Depends(get_session),
 ) -> dict:
     """所有する車一覧を取得.
 
@@ -43,7 +43,7 @@ async def list_vehicles(
         }
     """
     service = VehicleService(db_session)
-    vehicles: List[Vehicle] = await service.list_vehicles(
+    vehicles: List[Vehicle] = service.list_vehicles(
         user_id=current_user.id, skip=skip, limit=limit
     )
 
@@ -76,10 +76,10 @@ async def list_vehicles(
 
 
 @router.post("", response_model=None, status_code=status.HTTP_201_CREATED)
-async def create_vehicle(
+def create_vehicle(
     current_user: CurrentUser,
-    request: Request,
-    db_session: AsyncSession = Depends(get_session),
+    body: dict = Body(default={}),
+    db_session: Session = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
     """新規車を作成.
 
@@ -101,7 +101,6 @@ async def create_vehicle(
     """
     try:
         # JSON をパースして VehicleCreate にバリデーション
-        body = await request.json()
         vehicle_create = VehicleCreate(**body)
     except ValidationError as e:
         # Pydantic バリデーションエラーを 400 で返す
@@ -129,9 +128,7 @@ async def create_vehicle(
         )
 
     service = VehicleService(db_session)
-    created_vehicle: Vehicle = await service.create_vehicle(
-        vehicle_create, current_user.id
-    )
+    created_vehicle: Vehicle = service.create_vehicle(vehicle_create, current_user.id)
 
     # Vehicle を VehicleResponse に変換
     vehicle_response = VehicleResponse(
@@ -159,10 +156,10 @@ async def create_vehicle(
 
 
 @router.get("/{vehicle_id}", response_model=None)
-async def get_vehicle(
+def get_vehicle(
     current_user: CurrentUser,
     vehicle_id: UUID,
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Session = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
     """特定の車を取得.
 
@@ -183,7 +180,7 @@ async def get_vehicle(
     """
     service = VehicleService(db_session)
     try:
-        vehicle: Vehicle = await service.get_vehicle(vehicle_id, current_user.id)
+        vehicle: Vehicle = service.get_vehicle(vehicle_id, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -219,11 +216,11 @@ async def get_vehicle(
 
 
 @router.put("/{vehicle_id}", response_model=None)
-async def update_vehicle(
+def update_vehicle(
     current_user: CurrentUser,
     vehicle_id: UUID,
-    request: Request,
-    db_session: AsyncSession = Depends(get_session),
+    body: dict = Body(default={}),
+    db_session: Session = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
     """車情報を更新.
 
@@ -247,7 +244,6 @@ async def update_vehicle(
     """
     try:
         # JSON をパースして VehicleUpdate にバリデーション
-        body = await request.json()
         vehicle_update = VehicleUpdate(**body)
     except ValidationError as e:
         # Pydantic バリデーションエラーを 400 で返す
@@ -276,7 +272,7 @@ async def update_vehicle(
 
     service = VehicleService(db_session)
     try:
-        updated_vehicle: Vehicle = await service.update_vehicle(
+        updated_vehicle: Vehicle = service.update_vehicle(
             vehicle_id, vehicle_update, current_user.id
         )
     except NotFoundException as e:
@@ -316,10 +312,10 @@ async def update_vehicle(
 @router.delete(
     "/{vehicle_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT
 )
-async def delete_vehicle(
+def delete_vehicle(
     current_user: CurrentUser,
     vehicle_id: UUID,
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Session = Depends(get_session),
 ) -> Union[None, JSONResponse]:
     """車を削除.
 
@@ -337,7 +333,7 @@ async def delete_vehicle(
     """
     service = VehicleService(db_session)
     try:
-        await service.delete_vehicle(vehicle_id, current_user.id)
+        service.delete_vehicle(vehicle_id, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,

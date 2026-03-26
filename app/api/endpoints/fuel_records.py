@@ -3,10 +3,10 @@
 from typing import Union
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Body, Depends, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.database import get_session
 from app.schemas.fuel_record import (
@@ -25,12 +25,12 @@ router = APIRouter(
 
 
 @router.get("", response_model=dict)
-async def list_fuel_records(
+def list_fuel_records(
     current_user: CurrentUser,
     vehicle_id: UUID = Query(..., description="車 ID"),
     skip: int = Query(0, ge=0, description="スキップするレコード数"),
     limit: int = Query(100, ge=1, le=1000, description="取得するレコード数"),
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Session = Depends(get_session),
 ) -> dict:
     """燃費記録一覧取得
 
@@ -49,7 +49,7 @@ async def list_fuel_records(
         }
     """
     service = FuelRecordService(db_session)
-    fuel_records = await service.list_fuel_records(
+    fuel_records = service.list_fuel_records(
         user_id=current_user.id,
         vehicle_id=vehicle_id,
         limit=limit,
@@ -84,10 +84,10 @@ async def list_fuel_records(
 
 
 @router.post("", response_model=None, status_code=status.HTTP_201_CREATED)
-async def create_fuel_record(
+def create_fuel_record(
     current_user: CurrentUser,
-    request: Request,
-    db_session: AsyncSession = Depends(get_session),
+    body: dict = Body(default={}),
+    db_session: Session = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
     """燃費記録作成
 
@@ -109,7 +109,6 @@ async def create_fuel_record(
     """
     try:
         # JSON をパースして FuelRecordCreate にバリデーション
-        body = await request.json()
         fuel_record_create = FuelRecordCreate(**body)
     except ValidationError as e:
         # Pydantic バリデーションエラーを 400 で返す
@@ -137,7 +136,7 @@ async def create_fuel_record(
         )
 
     service = FuelRecordService(db_session)
-    fuel_record = await service.create_fuel_record(fuel_record_create, current_user.id)
+    fuel_record = service.create_fuel_record(fuel_record_create, current_user.id)
 
     fuel_record_response = FuelRecordResponse.model_validate(fuel_record)
 
@@ -148,10 +147,10 @@ async def create_fuel_record(
 
 
 @router.get("/{fuel_record_id}", response_model=None)
-async def get_fuel_record(
+def get_fuel_record(
     current_user: CurrentUser,
     fuel_record_id: UUID,
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Session = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
     """燃費記録取得
 
@@ -172,7 +171,7 @@ async def get_fuel_record(
     """
     service = FuelRecordService(db_session)
     try:
-        fuel_record = await service.get_fuel_record(fuel_record_id, current_user.id)
+        fuel_record = service.get_fuel_record(fuel_record_id, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -191,11 +190,11 @@ async def get_fuel_record(
 
 
 @router.put("/{fuel_record_id}", response_model=None)
-async def update_fuel_record(
+def update_fuel_record(
     current_user: CurrentUser,
     fuel_record_id: UUID,
-    request: Request,
-    db_session: AsyncSession = Depends(get_session),
+    body: dict = Body(default={}),
+    db_session: Session = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
     """燃費記録更新
 
@@ -219,7 +218,6 @@ async def update_fuel_record(
     """
     try:
         # JSON をパースして FuelRecordUpdate にバリデーション
-        body = await request.json()
         fuel_record_update = FuelRecordUpdate(**body)
     except ValidationError as e:
         # Pydantic バリデーションエラーを 400 で返す
@@ -248,7 +246,7 @@ async def update_fuel_record(
 
     service = FuelRecordService(db_session)
     try:
-        fuel_record = await service.update_fuel_record(
+        fuel_record = service.update_fuel_record(
             fuel_record_id, fuel_record_update, current_user.id
         )
     except NotFoundException as e:
@@ -271,10 +269,10 @@ async def update_fuel_record(
 @router.delete(
     "/{fuel_record_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT
 )
-async def delete_fuel_record(
+def delete_fuel_record(
     current_user: CurrentUser,
     fuel_record_id: UUID,
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Session = Depends(get_session),
 ) -> Union[None, JSONResponse]:
     """燃費記録削除
 
@@ -292,7 +290,7 @@ async def delete_fuel_record(
     """
     service = FuelRecordService(db_session)
     try:
-        await service.delete_fuel_record(fuel_record_id, current_user.id)
+        service.delete_fuel_record(fuel_record_id, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,

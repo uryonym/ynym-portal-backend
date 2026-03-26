@@ -5,7 +5,7 @@ from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import asc, select, desc
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.models.fuel_record import FuelRecord
 from app.schemas.fuel_record import FuelRecordCreate, FuelRecordUpdate
@@ -27,7 +27,7 @@ class FuelRecordService:
     CRUD 操作とビジネスロジックを提供する.
     """
 
-    def __init__(self, db_session: AsyncSession) -> None:
+    def __init__(self, db_session: Session) -> None:
         """初期化.
 
         Args:
@@ -35,7 +35,7 @@ class FuelRecordService:
         """
         self.db_session = db_session
 
-    async def list_fuel_records(
+    def list_fuel_records(
         self,
         user_id: UUID,
         vehicle_id: Optional[UUID] = None,
@@ -65,7 +65,7 @@ class FuelRecordService:
             query.order_by(desc(FuelRecord.refuel_datetime)).limit(limit).offset(offset)
         )
 
-        result = await self.db_session.execute(query)
+        result = self.db_session.execute(query)
         records = list(result.scalars().all())
 
         # 燃費計算のため、同じ車両の全レコードを取得（給油日時の昇順）
@@ -79,7 +79,7 @@ class FuelRecordService:
                 )
                 .order_by(asc(FuelRecord.refuel_datetime))
             )
-            all_result = await self.db_session.execute(all_records_query)
+            all_result = self.db_session.execute(all_records_query)
             all_records = list(all_result.scalars().all())
 
             return self._calculate_fuel_efficiency(records, all_records)
@@ -145,7 +145,7 @@ class FuelRecordService:
 
         return results
 
-    async def get_fuel_record(
+    def get_fuel_record(
         self,
         fuel_record_id: UUID,
         user_id: UUID,
@@ -165,10 +165,10 @@ class FuelRecordService:
             FuelRecord.deleted_at.is_(None),
         )
 
-        result = await self.db_session.execute(query)
+        result = self.db_session.execute(query)
         return result.scalar_one_or_none()
 
-    async def create_fuel_record(
+    def create_fuel_record(
         self,
         fuel_record_create: FuelRecordCreate,
         user_id: UUID,
@@ -194,11 +194,11 @@ class FuelRecordService:
             gas_station_name=fuel_record_create.gas_station_name,
         )
         self.db_session.add(fuel_record)
-        await self.db_session.commit()
-        await self.db_session.refresh(fuel_record)
+        self.db_session.commit()
+        self.db_session.refresh(fuel_record)
         return fuel_record
 
-    async def update_fuel_record(
+    def update_fuel_record(
         self,
         fuel_record_id: UUID,
         fuel_record_update: FuelRecordUpdate,
@@ -214,7 +214,7 @@ class FuelRecordService:
         Returns:
             更新された燃費記録、見つからない場合は None.
         """
-        fuel_record = await self.get_fuel_record(fuel_record_id, user_id)
+        fuel_record = self.get_fuel_record(fuel_record_id, user_id)
         if not fuel_record:
             return None
 
@@ -224,11 +224,11 @@ class FuelRecordService:
                 setattr(fuel_record, key, value)
 
         self.db_session.add(fuel_record)
-        await self.db_session.commit()
-        await self.db_session.refresh(fuel_record)
+        self.db_session.commit()
+        self.db_session.refresh(fuel_record)
         return fuel_record
 
-    async def delete_fuel_record(
+    def delete_fuel_record(
         self,
         fuel_record_id: UUID,
         user_id: UUID,
@@ -242,7 +242,7 @@ class FuelRecordService:
         Returns:
             削除成功時 True、見つからない場合 False.
         """
-        fuel_record = await self.get_fuel_record(fuel_record_id, user_id)
+        fuel_record = self.get_fuel_record(fuel_record_id, user_id)
         if not fuel_record:
             return False
 
@@ -251,5 +251,5 @@ class FuelRecordService:
 
         fuel_record.deleted_at = datetime.now(JST)
         self.db_session.add(fuel_record)
-        await self.db_session.commit()
+        self.db_session.commit()
         return True

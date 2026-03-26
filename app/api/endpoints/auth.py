@@ -3,7 +3,7 @@
 import secrets
 from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from urllib.parse import urlencode
 
 from app.database import get_session
@@ -18,8 +18,8 @@ def generate_state() -> str:
 
 
 @router.get("/google/login")
-async def google_login(request: Request):
-    """Initiate Google OAuth2 authentication flow"""
+def google_login(request: Request):
+    """Initiate Google OAuth2 authentication flow."""
     state = generate_state()
     redirect_uri = f"{settings.BACKEND_URL}/api/auth/google/callback"
 
@@ -52,8 +52,8 @@ async def google_login(request: Request):
 
 
 @router.get("/google/callback")
-async def google_callback(
-    request: Request, code: str, state: str, db: AsyncSession = Depends(get_session)
+def google_callback(
+    request: Request, code: str, state: str, db: Session = Depends(get_session)
 ):
     """Handle the callback from Google after user consent"""
     stored_state = request.cookies.get("oauth_state")
@@ -63,7 +63,7 @@ async def google_callback(
         )
 
     try:
-        jwt_token = await auth_service.authenticate_google_user(code=code, db=db)
+        jwt_token = auth_service.authenticate_google_user(code=code, db=db)
     except HTTPException:
         raise
     except Exception as e:
@@ -95,8 +95,8 @@ async def google_callback(
 
 
 @router.post("/logout")
-async def logout():
-    """Log out user by clearing their session cookie"""
+def logout():
+    """Log out user by clearing their session cookie."""
     response = JSONResponse(content={"message": "Successfully logged out"})
 
     delete_params = {

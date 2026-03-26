@@ -1,6 +1,6 @@
 import httpx
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.schemas.user import UserCreate
@@ -20,13 +20,13 @@ class AuthService:
     GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
     GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
-    async def authenticate_google_user(self, code: str, db: AsyncSession) -> str:
+    def authenticate_google_user(self, code: str, db: Session) -> str:
         """
         Authenticates a user via Google OAuth code.
         Returns a JWT access token if successful.
         """
         # --- Step 1: Exchange code for access token ---
-        token_data = await self._exchange_code_for_token(code)
+        token_data = self._exchange_code_for_token(code)
         access_token = token_data.get("access_token")
         if not access_token:
             raise HTTPException(
@@ -34,7 +34,7 @@ class AuthService:
                 detail="Failed to retrieve access token from Google",
             )
         # --- Step 2 : Fetch user info from Google ---
-        user_info = await self._fetch_user_info(access_token)
+        user_info = self._fetch_user_info(access_token)
         email = user_info.get("email")
         name = user_info.get("name")
         picture = user_info.get("picture")
@@ -52,19 +52,19 @@ class AuthService:
         user_in = UserCreate(
             email=email, name=name or email.split("@")[0], avatar_url=picture
         )
-        user = await UserService(db).get_or_create(user_in=user_in)
+        user = UserService(db).get_or_create(user_in=user_in)
         # --- Step 4 : Create JWT session token ---
         jwt_token = create_access_token(data={"sub": user.email})
         return jwt_token
 
-    async def _exchange_code_for_token(self, code: str) -> dict:
+    def _exchange_code_for_token(self, code: str) -> dict:
         """Exchanges OAuth code for access token."""
         redirect_uri = f"{settings.BACKEND_URL}/api/auth/google/callback"
 
         print(f"DEBUG: AuthService token exchange redirect_uri: {redirect_uri}")
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
+        with httpx.Client() as client:
+            response = client.post(
                 self.GOOGLE_TOKEN_URL,
                 data={
                     "client_id": settings.GOOGLE_CLIENT_ID,
@@ -83,10 +83,10 @@ class AuthService:
             )
         return response.json()
 
-    async def _fetch_user_info(self, access_token: str) -> dict:
+    def _fetch_user_info(self, access_token: str) -> dict:
         """Fetches user profile from Google."""
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
+        with httpx.Client() as client:
+            response = client.get(
                 self.GOOGLE_USERINFO_URL,
                 headers={"Authorization": f"Bearer {access_token}"},
             )

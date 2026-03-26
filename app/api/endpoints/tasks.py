@@ -4,10 +4,10 @@ from datetime import datetime
 from typing import List, Optional, Union
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Body, Depends, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.database import get_session
 from app.models.base import JST
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
 @router.get("", response_model=dict)
-async def list_tasks(
+def list_tasks(
     current_user: CurrentUser,
     skip: int = Query(0, ge=0, description="スキップするレコード数"),
     limit: int = Query(100, ge=1, le=1000, description="取得するレコード数"),
@@ -29,7 +29,7 @@ async def list_tasks(
         None,
         description="完了状態でフィルタ（true: 完了のみ、false: 未完了のみ、指定なし: 全件）",
     ),
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Session = Depends(get_session),
 ) -> dict:
     """タスク一覧を取得.
 
@@ -49,7 +49,7 @@ async def list_tasks(
         }
     """
     service = TaskService(db_session)
-    tasks: List[Task] = await service.list_tasks(
+    tasks: List[Task] = service.list_tasks(
         user_id=current_user.id, skip=skip, limit=limit, is_completed=is_completed
     )
 
@@ -77,10 +77,10 @@ async def list_tasks(
 
 
 @router.post("", response_model=None, status_code=status.HTTP_201_CREATED)
-async def create_task(
+def create_task(
     current_user: CurrentUser,
-    request: Request,
-    db_session: AsyncSession = Depends(get_session),
+    body: dict = Body(default={}),
+    db_session: Session = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
     """新規タスクを作成.
 
@@ -102,7 +102,6 @@ async def create_task(
     """
     try:
         # JSON をパースして TaskCreate にバリデーション
-        body = await request.json()
         task_create = TaskCreate(**body)
     except ValidationError as e:
         # Pydantic バリデーションエラーを 400 で返す
@@ -130,7 +129,7 @@ async def create_task(
         )
 
     service = TaskService(db_session)
-    created_task: Task = await service.create_task(task_create, current_user.id)
+    created_task: Task = service.create_task(task_create, current_user.id)
 
     # Task を TaskResponse に変換
     task_response = TaskResponse(
@@ -153,10 +152,10 @@ async def create_task(
 
 
 @router.get("/{task_id}", response_model=None)
-async def get_task(
+def get_task(
     current_user: CurrentUser,
     task_id: UUID,
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Session = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
     """タスクを取得.
 
@@ -177,7 +176,7 @@ async def get_task(
     """
     service = TaskService(db_session)
     try:
-        task: Task = await service.get_task(task_id, current_user.id)
+        task: Task = service.get_task(task_id, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -208,11 +207,11 @@ async def get_task(
 
 
 @router.put("/{task_id}", response_model=None)
-async def update_task(
+def update_task(
     current_user: CurrentUser,
     task_id: UUID,
-    request: Request,
-    db_session: AsyncSession = Depends(get_session),
+    body: dict = Body(default={}),
+    db_session: Session = Depends(get_session),
 ) -> Union[dict, JSONResponse]:
     """タスクを更新.
 
@@ -236,7 +235,6 @@ async def update_task(
     """
     try:
         # JSON をパースして TaskUpdate にバリデーション
-        body = await request.json()
         task_update = TaskUpdate(**body)
     except ValidationError as e:
         # Pydantic バリデーションエラーを 400 で返す
@@ -265,9 +263,7 @@ async def update_task(
 
     service = TaskService(db_session)
     try:
-        updated_task: Task = await service.update_task(
-            task_id, task_update, current_user.id
-        )
+        updated_task: Task = service.update_task(task_id, task_update, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -300,10 +296,10 @@ async def update_task(
 @router.delete(
     "/{task_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT
 )
-async def delete_task(
+def delete_task(
     current_user: CurrentUser,
     task_id: UUID,
-    db_session: AsyncSession = Depends(get_session),
+    db_session: Session = Depends(get_session),
 ) -> Union[None, JSONResponse]:
     """タスクを削除.
 
@@ -321,7 +317,7 @@ async def delete_task(
     """
     service = TaskService(db_session)
     try:
-        await service.delete_task(task_id, current_user.id)
+        service.delete_task(task_id, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,

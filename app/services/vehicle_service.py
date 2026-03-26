@@ -4,7 +4,7 @@ from typing import List
 from uuid import UUID
 
 from sqlalchemy import and_, asc, desc, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.models.vehicle import Vehicle
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate
@@ -14,7 +14,7 @@ from app.utils.exceptions import NotFoundException
 class VehicleService:
     """車管理サービス."""
 
-    def __init__(self, db_session: AsyncSession) -> None:
+    def __init__(self, db_session: Session) -> None:
         """初期化.
 
         Args:
@@ -22,7 +22,7 @@ class VehicleService:
         """
         self.db_session = db_session
 
-    async def list_vehicles(
+    def list_vehicles(
         self,
         user_id: UUID,
         skip: int = 0,
@@ -50,10 +50,10 @@ class VehicleService:
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         return result.scalars().all()
 
-    async def get_vehicle(self, vehicle_id: UUID, user_id: UUID) -> Vehicle:
+    def get_vehicle(self, vehicle_id: UUID, user_id: UUID) -> Vehicle:
         """特定の車を取得.
 
         Args:
@@ -73,7 +73,7 @@ class VehicleService:
                 Vehicle.deleted_at.is_(None),
             )
         )
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         vehicle = result.scalars().one_or_none()
 
         if not vehicle:
@@ -81,7 +81,7 @@ class VehicleService:
 
         return vehicle
 
-    async def create_vehicle(
+    def create_vehicle(
         self,
         vehicle_create: VehicleCreate,
         user_id: UUID,
@@ -109,7 +109,7 @@ class VehicleService:
             .order_by(desc(Vehicle.seq))
             .limit(1)
         )
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         last_vehicle = result.scalars().one_or_none()
 
         # 新しい seq を決定（既存最大値 + 1、存在しない場合は 1）
@@ -126,11 +126,11 @@ class VehicleService:
             tank_capacity=vehicle_create.tank_capacity,
         )
         self.db_session.add(vehicle)
-        await self.db_session.commit()
-        await self.db_session.refresh(vehicle)
+        self.db_session.commit()
+        self.db_session.refresh(vehicle)
         return vehicle
 
-    async def update_vehicle(
+    def update_vehicle(
         self,
         vehicle_id: UUID,
         vehicle_update: VehicleUpdate,
@@ -149,7 +149,7 @@ class VehicleService:
         Raises:
             NotFoundException: 車が見つかりません
         """
-        vehicle = await self.get_vehicle(vehicle_id, user_id)
+        vehicle = self.get_vehicle(vehicle_id, user_id)
 
         # 部分更新: 指定されたフィールドのみ更新
         update_data = vehicle_update.model_dump(exclude_unset=True)
@@ -157,11 +157,11 @@ class VehicleService:
             setattr(vehicle, field, value)
 
         self.db_session.add(vehicle)
-        await self.db_session.commit()
-        await self.db_session.refresh(vehicle)
+        self.db_session.commit()
+        self.db_session.refresh(vehicle)
         return vehicle
 
-    async def delete_vehicle(self, vehicle_id: UUID, user_id: UUID) -> None:
+    def delete_vehicle(self, vehicle_id: UUID, user_id: UUID) -> None:
         """車を削除（論理削除）.
 
         Args:
@@ -174,10 +174,10 @@ class VehicleService:
         from datetime import datetime
         from app.models.base import JST
 
-        vehicle = await self.get_vehicle(vehicle_id, user_id)
+        vehicle = self.get_vehicle(vehicle_id, user_id)
 
         # 論理削除
         vehicle.deleted_at = datetime.now(JST)
 
         self.db_session.add(vehicle)
-        await self.db_session.commit()
+        self.db_session.commit()

@@ -22,15 +22,6 @@ def client():
 
 
 @pytest.fixture
-async def async_client():
-    """FastAPI 用の非同期テストクライアント."""
-    from httpx import AsyncClient
-
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        yield ac
-
-
-@pytest.fixture
 def sample_task_data() -> dict:
     """テスト用タスクデータ."""
     return {
@@ -81,7 +72,7 @@ def task_fixtures() -> dict:
 def override_current_user_dependency():
     """認証依存をテスト用ユーザーで上書き."""
 
-    async def _override_current_user() -> User:
+    def _override_current_user() -> User:
         return User(
             id=UUID("550e8400-e29b-41d4-a716-446655440000"),
             email="test@example.com",

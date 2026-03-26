@@ -1,24 +1,21 @@
 """データベース接続とセッション管理."""
 
-from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from typing import Generator
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import settings
 
-# 非同期エンジンを作成
-engine: AsyncEngine = create_async_engine(
+# 同期エンジンを作成
+engine = create_engine(
     settings.database_url,
     echo=settings.LOG_LEVEL == "DEBUG",
-    future=True,
 )
 
-# 非同期セッションファクトリを作成
-async_session_factory = sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
-)
+# セッションファクトリを作成
+session_factory = sessionmaker(engine, class_=Session, expire_on_commit=False)
 
 
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
+def get_session() -> Generator[Session, None, None]:
     """データベースセッション取得の依存性."""
-    async with async_session_factory() as session:
+    with session_factory() as session:
         yield session

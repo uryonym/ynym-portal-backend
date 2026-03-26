@@ -1,7 +1,7 @@
 """TaskService.list_tasks() のユニットテスト."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 from uuid import UUID
 from datetime import date, timedelta
 from pydantic import ValidationError
@@ -18,7 +18,7 @@ TEST_USER_ID = UUID("550e8400-e29b-41d4-a716-446655440000")
 def create_mock_result(data: list) -> MagicMock:
     """SQLAlchemy 結果オブジェクトをモック.
 
-    result = await session.execute(stmt)
+    result = session.execute(stmt)
     result.scalars().all() -> data
     """
     mock_scalars = MagicMock()
@@ -36,22 +36,22 @@ class TestTaskServiceListTasks:
     @pytest.fixture
     def mock_db_session(self):
         """モック DB セッション."""
-        return AsyncMock()
+        return MagicMock()
 
-    async def test_list_tasks_empty(self, mock_db_session) -> None:
+    def test_list_tasks_empty(self, mock_db_session) -> None:
         """タスクが存在しない場合、空リストを返す."""
         # モック設定: 空の結果
-        mock_db_session.execute = AsyncMock(return_value=create_mock_result([]))
+        mock_db_session.execute = MagicMock(return_value=create_mock_result([]))
 
         # テスト実行
         service = TaskService(mock_db_session)
-        tasks = await service.list_tasks(TEST_USER_ID)
+        tasks = service.list_tasks(TEST_USER_ID)
 
         # 検証
         assert tasks == []
         mock_db_session.execute.assert_called_once()
 
-    async def test_list_tasks_with_multiple_tasks(self, mock_db_session) -> None:
+    def test_list_tasks_with_multiple_tasks(self, mock_db_session) -> None:
         """複数のタスクが存在する場合、タスクリストを返す."""
         # テストデータ作成
         task1 = MagicMock(spec=Task)
@@ -63,18 +63,20 @@ class TestTaskServiceListTasks:
         task2.title = "タスク2"
 
         # モック設定
-        mock_db_session.execute = AsyncMock(return_value=create_mock_result([task1, task2]))
+        mock_db_session.execute = MagicMock(
+            return_value=create_mock_result([task1, task2])
+        )
 
         # テスト実行
         service = TaskService(mock_db_session)
-        tasks = await service.list_tasks(TEST_USER_ID)
+        tasks = service.list_tasks(TEST_USER_ID)
 
         # 検証
         assert len(tasks) == 2
         assert tasks[0].title == "タスク1"
         assert tasks[1].title == "タスク2"
 
-    async def test_list_tasks_sorting_by_due_date(self, mock_db_session) -> None:
+    def test_list_tasks_sorting_by_due_date(self, mock_db_session) -> None:
         """期日でソートされることを確認（1番目のタスクが最も近い期日）."""
         # テストデータ: due_date が昇順でソートされていることをシミュレート
         today = date.today()
@@ -92,13 +94,13 @@ class TestTaskServiceListTasks:
         task_latest.title = "最新の期日"
 
         # モック設定: nulls_last でソートされた順序で返す
-        mock_db_session.execute = AsyncMock(
+        mock_db_session.execute = MagicMock(
             return_value=create_mock_result([task_earliest, task_middle, task_latest])
         )
 
         # テスト実行
         service = TaskService(mock_db_session)
-        tasks = await service.list_tasks(TEST_USER_ID)
+        tasks = service.list_tasks(TEST_USER_ID)
 
         # 検証: 期日が昇順でソートされていることを確認
         assert len(tasks) == 3
@@ -107,7 +109,7 @@ class TestTaskServiceListTasks:
         assert tasks[1].title == "中間の期日"
         assert tasks[2].title == "最新の期日"
 
-    async def test_list_tasks_undated_tasks_at_end(self, mock_db_session) -> None:
+    def test_list_tasks_undated_tasks_at_end(self, mock_db_session) -> None:
         """期日なしのタスクが期日ありのタスク後に表示される."""
         today = date.today()
 
@@ -122,13 +124,13 @@ class TestTaskServiceListTasks:
         task_without_due.title = "期日なしタスク"
 
         # モック設定: nulls_last で期日ありが最初、期日なしが後
-        mock_db_session.execute = AsyncMock(
+        mock_db_session.execute = MagicMock(
             return_value=create_mock_result([task_with_due, task_without_due])
         )
 
         # テスト実行
         service = TaskService(mock_db_session)
-        tasks = await service.list_tasks(TEST_USER_ID)
+        tasks = service.list_tasks(TEST_USER_ID)
 
         # 検証: 期日ありが最初、期日なしが後
         assert len(tasks) == 2
@@ -137,7 +139,7 @@ class TestTaskServiceListTasks:
         assert tasks[1].title == "期日なしタスク"
         assert tasks[1].due_date is None
 
-    async def test_list_tasks_filter_by_is_completed_false(self, mock_db_session) -> None:
+    def test_list_tasks_filter_by_is_completed_false(self, mock_db_session) -> None:
         """is_completed=False で未完了タスクのみ取得."""
         # 未完了タスク
         task_incomplete = MagicMock(spec=Task)
@@ -146,20 +148,20 @@ class TestTaskServiceListTasks:
         task_incomplete.is_completed = False
 
         # モック設定: 未完了のみ返す
-        mock_db_session.execute = AsyncMock(
+        mock_db_session.execute = MagicMock(
             return_value=create_mock_result([task_incomplete])
         )
 
         # テスト実行
         service = TaskService(mock_db_session)
-        tasks = await service.list_tasks(TEST_USER_ID, is_completed=False)
+        tasks = service.list_tasks(TEST_USER_ID, is_completed=False)
 
         # 検証
         assert len(tasks) == 1
         assert tasks[0].title == "未完了タスク"
         assert tasks[0].is_completed is False
 
-    async def test_list_tasks_filter_by_is_completed_true(self, mock_db_session) -> None:
+    def test_list_tasks_filter_by_is_completed_true(self, mock_db_session) -> None:
         """is_completed=True で完了済みタスクのみ取得."""
         # 完了タスク
         task_complete = MagicMock(spec=Task)
@@ -168,20 +170,20 @@ class TestTaskServiceListTasks:
         task_complete.is_completed = True
 
         # モック設定: 完了のみ返す
-        mock_db_session.execute = AsyncMock(
+        mock_db_session.execute = MagicMock(
             return_value=create_mock_result([task_complete])
         )
 
         # テスト実行
         service = TaskService(mock_db_session)
-        tasks = await service.list_tasks(TEST_USER_ID, is_completed=True)
+        tasks = service.list_tasks(TEST_USER_ID, is_completed=True)
 
         # 検証
         assert len(tasks) == 1
         assert tasks[0].title == "完了タスク"
         assert tasks[0].is_completed is True
 
-    async def test_list_tasks_filter_by_is_completed_none(self, mock_db_session) -> None:
+    def test_list_tasks_filter_by_is_completed_none(self, mock_db_session) -> None:
         """is_completed=None（指定なし）で全タスク取得."""
         # 完了タスク
         task_complete = MagicMock(spec=Task)
@@ -196,13 +198,13 @@ class TestTaskServiceListTasks:
         task_incomplete.is_completed = False
 
         # モック設定: 全タスク返す
-        mock_db_session.execute = AsyncMock(
+        mock_db_session.execute = MagicMock(
             return_value=create_mock_result([task_complete, task_incomplete])
         )
 
         # テスト実行
         service = TaskService(mock_db_session)
-        tasks = await service.list_tasks(TEST_USER_ID, is_completed=None)
+        tasks = service.list_tasks(TEST_USER_ID, is_completed=None)
 
         # 検証
         assert len(tasks) == 2
@@ -214,9 +216,9 @@ class TestTaskServiceCreateTask:
     @pytest.fixture
     def mock_db_session(self):
         """モック DB セッション."""
-        return AsyncMock()
+        return MagicMock()
 
-    async def test_create_task_success(self, mock_db_session) -> None:
+    def test_create_task_success(self, mock_db_session) -> None:
         """最小限のデータでタスク作成成功."""
         # テストデータ
         task_create = TaskCreate(
@@ -236,16 +238,18 @@ class TestTaskServiceCreateTask:
 
         # モック設定: add, commit, refresh を無視
         mock_db_session.add = MagicMock()
-        mock_db_session.commit = AsyncMock()
-        mock_db_session.refresh = AsyncMock()
+        mock_db_session.commit = MagicMock()
+        mock_db_session.refresh = MagicMock()
+
         # add の副作用として、task オブジェクトに id を設定するシミュレーション
         def add_side_effect(obj):
             obj.id = created_task.id
+
         mock_db_session.add.side_effect = add_side_effect
 
         # テスト実行
         service = TaskService(mock_db_session)
-        result_task = await service.create_task(task_create, TEST_USER_ID)
+        result_task = service.create_task(task_create, TEST_USER_ID)
 
         # 検証
         assert result_task.user_id == TEST_USER_ID
@@ -255,7 +259,7 @@ class TestTaskServiceCreateTask:
         mock_db_session.commit.assert_called_once()
         mock_db_session.refresh.assert_called_once()
 
-    async def test_create_task_with_all_fields(self, mock_db_session) -> None:
+    def test_create_task_with_all_fields(self, mock_db_session) -> None:
         """すべてのフィールドを指定してタスク作成成功."""
         # テストデータ
         due_date = date(2025, 12, 31)
@@ -277,16 +281,17 @@ class TestTaskServiceCreateTask:
 
         # モック設定
         mock_db_session.add = MagicMock()
-        mock_db_session.commit = AsyncMock()
-        mock_db_session.refresh = AsyncMock()
+        mock_db_session.commit = MagicMock()
+        mock_db_session.refresh = MagicMock()
 
         def add_side_effect(obj):
             obj.id = created_task.id
+
         mock_db_session.add.side_effect = add_side_effect
 
         # テスト実行
         service = TaskService(mock_db_session)
-        result_task = await service.create_task(task_create, TEST_USER_ID)
+        result_task = service.create_task(task_create, TEST_USER_ID)
 
         # 検証
         assert result_task.user_id == TEST_USER_ID
@@ -322,9 +327,9 @@ class TestTaskServiceGetTask:
     @pytest.fixture
     def mock_db_session(self):
         """モック DB セッション."""
-        return AsyncMock()
+        return MagicMock()
 
-    async def test_get_task_success(self, mock_db_session) -> None:
+    def test_get_task_success(self, mock_db_session) -> None:
         """タスク ID とユーザー ID で正常にタスクを取得."""
         # テスト用タスクデータ
         task = Task(
@@ -342,18 +347,18 @@ class TestTaskServiceGetTask:
         mock_result = MagicMock()
         mock_result.scalars.return_value = mock_scalars
 
-        mock_db_session.execute = AsyncMock(return_value=mock_result)
+        mock_db_session.execute = MagicMock(return_value=mock_result)
 
         # テスト実行
         service = TaskService(mock_db_session)
-        result = await service.get_task(task.id, TEST_USER_ID)
+        result = service.get_task(task.id, TEST_USER_ID)
 
         # 検証
         assert result.id == task.id
         assert result.title == "買い物"
         assert result.description == "牛乳を買う"
 
-    async def test_get_task_not_found_fails(self, mock_db_session) -> None:
+    def test_get_task_not_found_fails(self, mock_db_session) -> None:
         """タスクが見つからない場合、NotFoundException を発生させる."""
         # モック設定
         mock_scalars = MagicMock()
@@ -362,12 +367,12 @@ class TestTaskServiceGetTask:
         mock_result = MagicMock()
         mock_result.scalars.return_value = mock_scalars
 
-        mock_db_session.execute = AsyncMock(return_value=mock_result)
+        mock_db_session.execute = MagicMock(return_value=mock_result)
 
         # テスト実行・検証
         service = TaskService(mock_db_session)
         with pytest.raises(NotFoundException):
-            await service.get_task(UUID("99999999-9999-9999-9999-999999999999"), TEST_USER_ID)
+            service.get_task(UUID("99999999-9999-9999-9999-999999999999"), TEST_USER_ID)
 
 
 class TestTaskServiceUpdateTask:
@@ -376,9 +381,9 @@ class TestTaskServiceUpdateTask:
     @pytest.fixture
     def mock_db_session(self):
         """モック DB セッション."""
-        return AsyncMock()
+        return MagicMock()
 
-    async def test_update_task_success(self, mock_db_session) -> None:
+    def test_update_task_success(self, mock_db_session) -> None:
         """タスクを正常に更新."""
         # テスト用タスクデータ
         task = Task(
@@ -396,15 +401,15 @@ class TestTaskServiceUpdateTask:
         mock_result = MagicMock()
         mock_result.scalars.return_value = mock_scalars
 
-        mock_db_session.execute = AsyncMock(return_value=mock_result)
+        mock_db_session.execute = MagicMock(return_value=mock_result)
         mock_db_session.add = MagicMock()
-        mock_db_session.commit = AsyncMock()
-        mock_db_session.refresh = AsyncMock()
+        mock_db_session.commit = MagicMock()
+        mock_db_session.refresh = MagicMock()
 
         # テスト実行
         service = TaskService(mock_db_session)
         update_data = TaskUpdate(title="食材の買い物")
-        result = await service.update_task(task.id, update_data, TEST_USER_ID)
+        result = service.update_task(task.id, update_data, TEST_USER_ID)
 
         # 検証
         assert result.title == "食材の買い物"
@@ -412,7 +417,7 @@ class TestTaskServiceUpdateTask:
         mock_db_session.commit.assert_called_once()
         mock_db_session.refresh.assert_called_once()
 
-    async def test_update_task_partial(self, mock_db_session) -> None:
+    def test_update_task_partial(self, mock_db_session) -> None:
         """部分更新：指定フィールドのみ更新."""
         # テスト用タスクデータ
         task = Task(
@@ -430,15 +435,15 @@ class TestTaskServiceUpdateTask:
         mock_result = MagicMock()
         mock_result.scalars.return_value = mock_scalars
 
-        mock_db_session.execute = AsyncMock(return_value=mock_result)
+        mock_db_session.execute = MagicMock(return_value=mock_result)
         mock_db_session.add = MagicMock()
-        mock_db_session.commit = AsyncMock()
-        mock_db_session.refresh = AsyncMock()
+        mock_db_session.commit = MagicMock()
+        mock_db_session.refresh = MagicMock()
 
         # テスト実行：is_completed のみ更新
         service = TaskService(mock_db_session)
         update_data = TaskUpdate(is_completed=True)
-        result = await service.update_task(task.id, update_data, TEST_USER_ID)
+        result = service.update_task(task.id, update_data, TEST_USER_ID)
 
         # 検証：is_completed が更新され、title は変わらない
         assert result.is_completed is True

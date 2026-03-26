@@ -1,7 +1,7 @@
 """ユーザー関連エンドポイント."""
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.database import get_session
 from app.schemas.user import UserResponse
@@ -12,8 +12,8 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user(request: Request, db: AsyncSession = Depends(get_session)):
-    """Get current authenticated user"""
+def get_current_user(request: Request, db: Session = Depends(get_session)):
+    """Get current authenticated user."""
     # ---  Get token from httpOnly cookie ----
     token = request.cookies.get("access_token")
     if not token:
@@ -33,7 +33,7 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_sess
 
         # ---  Get user from database ----
         user_service = UserService(db)
-        user = await user_service.get_by_email(email=user_email)
+        user = user_service.get_by_email(email=user_email)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"

@@ -2,7 +2,7 @@
 
 import pytest
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 from uuid import UUID
 
 from app.models.fuel_record import FuelRecord
@@ -13,16 +13,14 @@ JST = timezone(timedelta(hours=9))
 
 
 @pytest.fixture
-def mock_db_session() -> AsyncMock:
+def mock_db_session() -> MagicMock:
     """モック DB セッション."""
-    return AsyncMock()
+    return MagicMock()
 
 
 class TestFuelRecordServiceListFuelRecords:
     """FuelRecordService.list_fuel_records テスト."""
-
-    @pytest.mark.asyncio
-    async def test_list_fuel_records_empty(self, mock_db_session: AsyncMock) -> None:
+    def test_list_fuel_records_empty(self, mock_db_session: MagicMock) -> None:
         """燃費記録がない場合."""
         user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
         vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
@@ -32,13 +30,11 @@ class TestFuelRecordServiceListFuelRecords:
         mock_db_session.execute.return_value = mock_result
 
         service = FuelRecordService(mock_db_session)
-        records = await service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
+        records = service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
 
         assert records == []
-
-    @pytest.mark.asyncio
-    async def test_list_fuel_records_with_multiple_records(
-        self, mock_db_session: AsyncMock
+    def test_list_fuel_records_with_multiple_records(
+        self, mock_db_session: MagicMock
     ) -> None:
         """複数の燃費記録がある場合."""
         user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
@@ -75,7 +71,7 @@ class TestFuelRecordServiceListFuelRecords:
         mock_db_session.execute.return_value = mock_result
 
         service = FuelRecordService(mock_db_session)
-        records = await service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
+        records = service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
 
         assert len(records) == 2
         assert records[0].record.fuel_type == "ハイオク"
@@ -84,9 +80,7 @@ class TestFuelRecordServiceListFuelRecords:
 
 class TestFuelRecordServiceFuelEfficiencyCalculation:
     """燃費計算テスト."""
-
-    @pytest.mark.asyncio
-    async def test_fuel_efficiency_first_record(self, mock_db_session: AsyncMock) -> None:
+    def test_fuel_efficiency_first_record(self, mock_db_session: MagicMock) -> None:
         """最初のレコードは総走行距離がそのまま走行距離になる."""
         user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
         vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
@@ -110,7 +104,7 @@ class TestFuelRecordServiceFuelEfficiencyCalculation:
         mock_db_session.execute.return_value = mock_result
 
         service = FuelRecordService(mock_db_session)
-        records = await service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
+        records = service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
 
         assert len(records) == 1
         # 最初の記録なので走行距離 = 総走行距離
@@ -119,10 +113,8 @@ class TestFuelRecordServiceFuelEfficiencyCalculation:
         assert records[0].fuel_amount == 50.0
         # 燃費 = 500 / 50 = 10.0 km/L
         assert records[0].fuel_efficiency == 10.0
-
-    @pytest.mark.asyncio
-    async def test_fuel_efficiency_with_previous_record(
-        self, mock_db_session: AsyncMock
+    def test_fuel_efficiency_with_previous_record(
+        self, mock_db_session: MagicMock
     ) -> None:
         """前回データがある場合は差分が走行距離になる."""
         user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
@@ -168,7 +160,7 @@ class TestFuelRecordServiceFuelEfficiencyCalculation:
         mock_db_session.execute.side_effect = [mock_result_list, mock_result_all]
 
         service = FuelRecordService(mock_db_session)
-        records = await service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
+        records = service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
 
         assert len(records) == 1
         # 走行距離 = 1000 - 500 = 500km
@@ -177,9 +169,7 @@ class TestFuelRecordServiceFuelEfficiencyCalculation:
         assert records[0].fuel_amount == 50.0
         # 燃費 = 500 / 50 = 10.0 km/L
         assert records[0].fuel_efficiency == 10.0
-
-    @pytest.mark.asyncio
-    async def test_fuel_efficiency_rounding(self, mock_db_session: AsyncMock) -> None:
+    def test_fuel_efficiency_rounding(self, mock_db_session: MagicMock) -> None:
         """燃費は小数点2桁で丸められる."""
         user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
         vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
@@ -203,7 +193,7 @@ class TestFuelRecordServiceFuelEfficiencyCalculation:
         mock_db_session.execute.return_value = mock_result
 
         service = FuelRecordService(mock_db_session)
-        records = await service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
+        records = service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
 
         assert len(records) == 1
         # 給油量 = 8330 / 170 = 49.0
@@ -214,9 +204,7 @@ class TestFuelRecordServiceFuelEfficiencyCalculation:
 
 class TestFuelRecordServiceCreateFuelRecord:
     """FuelRecordService.create_fuel_record テスト."""
-
-    @pytest.mark.asyncio
-    async def test_create_fuel_record_success(self, mock_db_session: AsyncMock) -> None:
+    def test_create_fuel_record_success(self, mock_db_session: MagicMock) -> None:
         """燃費記録作成成功."""
         user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
         vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
@@ -234,15 +222,13 @@ class TestFuelRecordServiceCreateFuelRecord:
         )
 
         service = FuelRecordService(mock_db_session)
-        result = await service.create_fuel_record(fuel_record_create, user_id)
+        result = service.create_fuel_record(fuel_record_create, user_id)
 
         assert result.user_id == user_id
         assert result.vehicle_id == vehicle_id
         assert result.fuel_type == "ハイオク"
-
-    @pytest.mark.asyncio
-    async def test_create_fuel_record_with_minimal_fields(
-        self, mock_db_session: AsyncMock
+    def test_create_fuel_record_with_minimal_fields(
+        self, mock_db_session: MagicMock
     ) -> None:
         """最小限フィールドで作成."""
         user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
@@ -259,7 +245,7 @@ class TestFuelRecordServiceCreateFuelRecord:
         )
 
         service = FuelRecordService(mock_db_session)
-        result = await service.create_fuel_record(fuel_record_create, user_id)
+        result = service.create_fuel_record(fuel_record_create, user_id)
 
         assert result.is_full_tank is False
         assert result.gas_station_name is None
@@ -267,9 +253,7 @@ class TestFuelRecordServiceCreateFuelRecord:
 
 class TestFuelRecordServiceUpdateFuelRecord:
     """FuelRecordService.update_fuel_record テスト."""
-
-    @pytest.mark.asyncio
-    async def test_update_fuel_record_success(self, mock_db_session: AsyncMock) -> None:
+    def test_update_fuel_record_success(self, mock_db_session: MagicMock) -> None:
         """燃費記録更新成功."""
         user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
         vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
@@ -296,7 +280,7 @@ class TestFuelRecordServiceUpdateFuelRecord:
         fuel_record_update = FuelRecordUpdate(fuel_type="レギュラー")
 
         service = FuelRecordService(mock_db_session)
-        result = await service.update_fuel_record(
+        result = service.update_fuel_record(
             fuel_record_id, fuel_record_update, user_id
         )
 
@@ -306,9 +290,7 @@ class TestFuelRecordServiceUpdateFuelRecord:
 
 class TestFuelRecordServiceDeleteFuelRecord:
     """FuelRecordService.delete_fuel_record テスト."""
-
-    @pytest.mark.asyncio
-    async def test_delete_fuel_record_success(self, mock_db_session: AsyncMock) -> None:
+    def test_delete_fuel_record_success(self, mock_db_session: MagicMock) -> None:
         """燃費記録削除成功."""
         user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
         vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
@@ -333,7 +315,7 @@ class TestFuelRecordServiceDeleteFuelRecord:
         mock_db_session.execute.return_value = mock_result
 
         service = FuelRecordService(mock_db_session)
-        result = await service.delete_fuel_record(fuel_record_id, user_id)
+        result = service.delete_fuel_record(fuel_record_id, user_id)
 
         assert result is True
         assert fuel_record.deleted_at is not None

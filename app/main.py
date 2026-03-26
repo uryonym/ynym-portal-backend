@@ -30,6 +30,6 @@ app.include_router(router, prefix="/api")
 
 
 @app.get("/health")
-async def health_check() -> dict:
+def health_check() -> dict:
     """ヘルスチェックエンドポイント."""
     return {"status": "ok", "environment": settings.ENVIRONMENT}

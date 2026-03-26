@@ -1,7 +1,7 @@
 from typing import Annotated
 from fastapi import Depends, HTTPException, status, Request
 from jose import JWTError
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.database import get_session
 from app.models.user import User
@@ -15,8 +15,8 @@ credentials_exception = HTTPException(
 )
 
 
-async def get_current_user(
-    request: Request, db: Annotated[AsyncSession, Depends(get_session)]
+def get_current_user(
+    request: Request, db: Annotated[Session, Depends(get_session)]
 ) -> User:
     """
     Dependency to get the current authenticated user.
@@ -36,7 +36,7 @@ async def get_current_user(
         raise credentials_exception
 
     user_service = UserService(db)
-    user = await user_service.get_by_email(email=email)
+    user = user_service.get_by_email(email=email)
 
     if user is None:
         raise credentials_exception

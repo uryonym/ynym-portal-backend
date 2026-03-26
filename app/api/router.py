@@ -17,7 +17,7 @@ router = APIRouter()
 
 # ヘルスチェックエンドポイント（基本的な例）
 @router.get("/health")
-async def health() -> dict:
+def health() -> dict:
     """ヘルスチェックエンドポイント."""
     return {"status": "ok"}
 

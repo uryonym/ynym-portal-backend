@@ -1,6 +1,6 @@
 """NoteCategoryService のユニットテスト."""
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
@@ -28,21 +28,21 @@ class TestNoteCategoryServiceListCategories:
     """NoteCategoryService.list_categories のテストケース."""
 
     @pytest.fixture
-    def mock_db_session(self) -> AsyncMock:
-        return AsyncMock()
+    def mock_db_session(self) -> MagicMock:
+        return MagicMock()
 
-    async def test_list_categories_empty(self, mock_db_session: AsyncMock) -> None:
+    def test_list_categories_empty(self, mock_db_session: MagicMock) -> None:
         """カテゴリが存在しない場合、空リストを返す."""
-        mock_db_session.execute = AsyncMock(return_value=create_mock_result([]))
+        mock_db_session.execute = MagicMock(return_value=create_mock_result([]))
 
         service = NoteCategoryService(mock_db_session)
-        categories = await service.list_categories(TEST_USER_ID)
+        categories = service.list_categories(TEST_USER_ID)
 
         assert categories == []
         mock_db_session.execute.assert_called_once()
 
-    async def test_list_categories_with_multiple(
-        self, mock_db_session: AsyncMock
+    def test_list_categories_with_multiple(
+        self, mock_db_session: MagicMock
     ) -> None:
         """複数カテゴリが存在する場合、カテゴリリストを返す."""
         category1 = MagicMock(spec=NoteCategory)
@@ -51,12 +51,12 @@ class TestNoteCategoryServiceListCategories:
         category2 = MagicMock(spec=NoteCategory)
         category2.name = "個人"
 
-        mock_db_session.execute = AsyncMock(
+        mock_db_session.execute = MagicMock(
             return_value=create_mock_result([category1, category2])
         )
 
         service = NoteCategoryService(mock_db_session)
-        categories = await service.list_categories(TEST_USER_ID)
+        categories = service.list_categories(TEST_USER_ID)
 
         assert len(categories) == 2
         assert categories[0].name == "仕事"
@@ -67,10 +67,10 @@ class TestNoteCategoryServiceGetCategory:
     """NoteCategoryService.get_category のテストケース."""
 
     @pytest.fixture
-    def mock_db_session(self) -> AsyncMock:
-        return AsyncMock()
+    def mock_db_session(self) -> MagicMock:
+        return MagicMock()
 
-    async def test_get_category_success(self, mock_db_session: AsyncMock) -> None:
+    def test_get_category_success(self, mock_db_session: MagicMock) -> None:
         """カテゴリ取得成功."""
         category_id = UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
         category = MagicMock(spec=NoteCategory)
@@ -81,11 +81,11 @@ class TestNoteCategoryServiceGetCategory:
         mock_db_session.execute.return_value = mock_result
 
         service = NoteCategoryService(mock_db_session)
-        result = await service.get_category(category_id, TEST_USER_ID)
+        result = service.get_category(category_id, TEST_USER_ID)
 
         assert result.id == category_id
 
-    async def test_get_category_not_found(self, mock_db_session: AsyncMock) -> None:
+    def test_get_category_not_found(self, mock_db_session: MagicMock) -> None:
         """カテゴリが見つからない場合は例外."""
         category_id = UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
 
@@ -95,26 +95,26 @@ class TestNoteCategoryServiceGetCategory:
 
         service = NoteCategoryService(mock_db_session)
         with pytest.raises(NotFoundException):
-            await service.get_category(category_id, TEST_USER_ID)
+            service.get_category(category_id, TEST_USER_ID)
 
 
 class TestNoteCategoryServiceCreateCategory:
     """NoteCategoryService.create_category のテストケース."""
 
     @pytest.fixture
-    def mock_db_session(self) -> AsyncMock:
-        return AsyncMock()
+    def mock_db_session(self) -> MagicMock:
+        return MagicMock()
 
-    async def test_create_category_success(self, mock_db_session: AsyncMock) -> None:
+    def test_create_category_success(self, mock_db_session: MagicMock) -> None:
         """カテゴリ作成成功."""
         category_create = NoteCategoryCreate(name="仕事")
 
         mock_db_session.add = MagicMock()
-        mock_db_session.commit = AsyncMock()
-        mock_db_session.refresh = AsyncMock()
+        mock_db_session.commit = MagicMock()
+        mock_db_session.refresh = MagicMock()
 
         service = NoteCategoryService(mock_db_session)
-        result = await service.create_category(category_create, TEST_USER_ID)
+        result = service.create_category(category_create, TEST_USER_ID)
 
         assert result.user_id == TEST_USER_ID
         assert result.name == "仕事"
@@ -127,10 +127,10 @@ class TestNoteCategoryServiceUpdateCategory:
     """NoteCategoryService.update_category のテストケース."""
 
     @pytest.fixture
-    def mock_db_session(self) -> AsyncMock:
-        return AsyncMock()
+    def mock_db_session(self) -> MagicMock:
+        return MagicMock()
 
-    async def test_update_category_success(self, mock_db_session: AsyncMock) -> None:
+    def test_update_category_success(self, mock_db_session: MagicMock) -> None:
         """カテゴリ更新成功."""
         category_id = UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")
         category = MagicMock(spec=NoteCategory)
@@ -138,12 +138,12 @@ class TestNoteCategoryServiceUpdateCategory:
         category.name = "旧カテゴリ"
 
         service = NoteCategoryService(mock_db_session)
-        service.get_category = AsyncMock(return_value=category)
-        mock_db_session.commit = AsyncMock()
-        mock_db_session.refresh = AsyncMock()
+        service.get_category = MagicMock(return_value=category)
+        mock_db_session.commit = MagicMock()
+        mock_db_session.refresh = MagicMock()
 
         category_update = NoteCategoryUpdate(name="新カテゴリ")
-        updated = await service.update_category(
+        updated = service.update_category(
             category_id, category_update, TEST_USER_ID
         )
 
@@ -154,22 +154,22 @@ class TestNoteCategoryServiceDeleteCategory:
     """NoteCategoryService.delete_category のテストケース."""
 
     @pytest.fixture
-    def mock_db_session(self) -> AsyncMock:
-        return AsyncMock()
+    def mock_db_session(self) -> MagicMock:
+        return MagicMock()
 
-    async def test_delete_category_success(self, mock_db_session: AsyncMock) -> None:
+    def test_delete_category_success(self, mock_db_session: MagicMock) -> None:
         """カテゴリ削除成功."""
         category_id = UUID("dddddddd-dddd-dddd-dddd-dddddddddddd")
         category = MagicMock(spec=NoteCategory)
         category.id = category_id
 
         service = NoteCategoryService(mock_db_session)
-        service.get_category = AsyncMock(return_value=category)
-        mock_db_session.execute = AsyncMock()
-        mock_db_session.delete = AsyncMock()
-        mock_db_session.commit = AsyncMock()
+        service.get_category = MagicMock(return_value=category)
+        mock_db_session.execute = MagicMock()
+        mock_db_session.delete = MagicMock()
+        mock_db_session.commit = MagicMock()
 
-        await service.delete_category(category_id, TEST_USER_ID)
+        service.delete_category(category_id, TEST_USER_ID)
 
         mock_db_session.execute.assert_called_once()
         mock_db_session.delete.assert_called_once_with(category)

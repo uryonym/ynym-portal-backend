@@ -4,7 +4,7 @@ from typing import List
 from uuid import UUID
 
 from sqlalchemy import asc, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.sql import nulls_last
 from sqlmodel import col
 
@@ -17,7 +17,7 @@ from app.utils.exceptions import NotFoundException
 class NoteService:
     """ノート管理ビジネスロジック層."""
 
-    def __init__(self, db_session: AsyncSession) -> None:
+    def __init__(self, db_session: Session) -> None:
         """初期化.
 
         Args:
@@ -25,7 +25,7 @@ class NoteService:
         """
         self.db_session = db_session
 
-    async def list_notes(
+    def list_notes(
         self,
         user_id: UUID,
         skip: int = 0,
@@ -47,10 +47,10 @@ class NoteService:
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_note(self, note_id: UUID, user_id: UUID) -> Note:
+    def get_note(self, note_id: UUID, user_id: UUID) -> Note:
         """ノートを取得.
 
         Raises:
@@ -61,28 +61,28 @@ class NoteService:
             .where(col(Note.id) == note_id)
             .where(col(Note.user_id) == user_id)
         )
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         note = result.scalars().one_or_none()
         if not note:
             raise NotFoundException(f"ノート ID {note_id} が見つかりません")
         return note
 
-    async def _validate_category(self, category_id: UUID, user_id: UUID) -> None:
+    def _validate_category(self, category_id: UUID, user_id: UUID) -> None:
         """カテゴリがユーザーに属して存在することを検証."""
         stmt = (
             select(NoteCategory)
             .where(col(NoteCategory.id) == category_id)
             .where(col(NoteCategory.user_id) == user_id)
         )
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         category = result.scalars().one_or_none()
         if not category:
             raise NotFoundException(f"カテゴリ ID {category_id} が見つかりません")
 
-    async def create_note(self, note_create: NoteCreate, user_id: UUID) -> Note:
+    def create_note(self, note_create: NoteCreate, user_id: UUID) -> Note:
         """ノートを作成."""
         if note_create.category_id is not None:
-            await self._validate_category(note_create.category_id, user_id)
+            self._validate_category(note_create.category_id, user_id)
 
         note = Note(
             user_id=user_id,
@@ -91,32 +91,32 @@ class NoteService:
             category_id=note_create.category_id,
         )
         self.db_session.add(note)
-        await self.db_session.commit()
-        await self.db_session.refresh(note)
+        self.db_session.commit()
+        self.db_session.refresh(note)
         return note
 
-    async def update_note(
+    def update_note(
         self,
         note_id: UUID,
         note_update: NoteUpdate,
         user_id: UUID,
     ) -> Note:
         """ノートを更新（部分更新）."""
-        note = await self.get_note(note_id, user_id)
+        note = self.get_note(note_id, user_id)
         update_data = note_update.model_dump(exclude_unset=True)
 
         if "category_id" in update_data and update_data["category_id"] is not None:
-            await self._validate_category(update_data["category_id"], user_id)
+            self._validate_category(update_data["category_id"], user_id)
 
         for field, value in update_data.items():
             setattr(note, field, value)
         self.db_session.add(note)
-        await self.db_session.commit()
-        await self.db_session.refresh(note)
+        self.db_session.commit()
+        self.db_session.refresh(note)
         return note
 
-    async def delete_note(self, note_id: UUID, user_id: UUID) -> None:
+    def delete_note(self, note_id: UUID, user_id: UUID) -> None:
         """ノートを削除（物理削除）."""
-        note = await self.get_note(note_id, user_id)
-        await self.db_session.delete(note)
-        await self.db_session.commit()
+        note = self.get_note(note_id, user_id)
+        self.db_session.delete(note)
+        self.db_session.commit()

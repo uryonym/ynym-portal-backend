@@ -4,7 +4,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import asc, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.sql import nulls_last
 from sqlmodel import col
 
@@ -21,7 +21,7 @@ class TaskService:
     API エンドポイントから使用される。
     """
 
-    def __init__(self, db_session: AsyncSession) -> None:
+    def __init__(self, db_session: Session) -> None:
         """
         TaskService を初期化.
 
@@ -30,7 +30,7 @@ class TaskService:
         """
         self.db_session = db_session
 
-    async def list_tasks(
+    def list_tasks(
         self,
         user_id: UUID,
         skip: int = 0,
@@ -76,10 +76,10 @@ class TaskService:
             .limit(limit)
         )
 
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_task(self, task_id: UUID, user_id: UUID) -> Task:
+    def get_task(self, task_id: UUID, user_id: UUID) -> Task:
         """
         タスクを ID で取得.
 
@@ -103,13 +103,13 @@ class TaskService:
             .where(col(Task.user_id) == user_id)
             .where(col(Task.deleted_at).is_(None))  # 論理削除フィルター（将来）
         )
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         task = result.scalars().one_or_none()
         if not task:
             raise NotFoundException(f"タスク ID {task_id} が見つかりません")
         return task
 
-    async def create_task(self, task_create: TaskCreate, user_id: UUID) -> Task:
+    def create_task(self, task_create: TaskCreate, user_id: UUID) -> Task:
         """
         新規タスクを作成.
 
@@ -133,11 +133,11 @@ class TaskService:
             is_completed=task_create.is_completed or False,
         )
         self.db_session.add(task)
-        await self.db_session.commit()
-        await self.db_session.refresh(task)
+        self.db_session.commit()
+        self.db_session.refresh(task)
         return task
 
-    async def update_task(
+    def update_task(
         self,
         task_id: UUID,
         task_update: TaskUpdate,
@@ -162,7 +162,7 @@ class TaskService:
             >>> update_data = TaskUpdate(title="食材の買い物")
             >>> task = await service.update_task(task_id, update_data, user_id)
         """
-        task = await self.get_task(task_id, user_id)
+        task = self.get_task(task_id, user_id)
 
         # 更新されたフィールドのみ適用（部分更新）
         update_data = task_update.model_dump(exclude_unset=True)
@@ -183,11 +183,11 @@ class TaskService:
             setattr(task, field, value)
 
         self.db_session.add(task)
-        await self.db_session.commit()
-        await self.db_session.refresh(task)
+        self.db_session.commit()
+        self.db_session.refresh(task)
         return task
 
-    async def delete_task(self, task_id: UUID, user_id: UUID) -> None:
+    def delete_task(self, task_id: UUID, user_id: UUID) -> None:
         """
         タスクを削除（物理削除）.
 
@@ -202,6 +202,6 @@ class TaskService:
             >>> service = TaskService(db_session)
             >>> await service.delete_task(task_id, user_id)
         """
-        task = await self.get_task(task_id, user_id)
-        await self.db_session.delete(task)
-        await self.db_session.commit()
+        task = self.get_task(task_id, user_id)
+        self.db_session.delete(task)
+        self.db_session.commit()
