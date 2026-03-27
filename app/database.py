@@ -1,14 +1,16 @@
 """データベース接続とセッション管理."""
 
 from typing import Generator
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+
 from app.core.config import settings
 
-# 同期エンジンを作成
+# 同期エンジンを作成（SQLログはloggingモジュールで制御）
 engine = create_engine(
     settings.database_url,
-    echo=settings.LOG_LEVEL == "DEBUG",
+    echo=False,
 )
 
 # セッションファクトリを作成

@@ -1,77 +1,41 @@
 """タスク関連エンドポイント."""
 
-from datetime import datetime
-from typing import List, Optional, Union
+from typing import Optional, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Query, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.database import get_session
-from app.models.base import JST
-from app.models.task import Task
+from app.repositories.task_repository import TaskRepository
 from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate
-from app.services.task_service import TaskService
 from app.security.deps import CurrentUser
+from app.services.task_service import TaskService
 from app.utils.exceptions import NotFoundException
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
+def _get_task_service(db: Session = Depends(get_session)) -> TaskService:
+    return TaskService(TaskRepository(db))
+
+
 @router.get("", response_model=dict)
 def list_tasks(
     current_user: CurrentUser,
-    skip: int = Query(0, ge=0, description="スキップするレコード数"),
-    limit: int = Query(100, ge=1, le=1000, description="取得するレコード数"),
-    is_completed: Optional[bool] = Query(
-        None,
-        description="完了状態でフィルタ（true: 完了のみ、false: 未完了のみ、指定なし: 全件）",
-    ),
-    db_session: Session = Depends(get_session),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    is_completed: Optional[bool] = Query(None),
+    service: TaskService = Depends(_get_task_service),
 ) -> dict:
-    """タスク一覧を取得.
-
-    期日が近い順（昇順）でソートされ、期日なしのタスクは
-    作成日時の古い順で期日ありのタスクの後に表示されます。
-
-    Args:
-        skip: スキップするレコード数（デフォルト 0）
-        limit: 取得するレコード数（デフォルト 100、最大 1000）
-        is_completed: 完了状態でフィルタ（true: 完了のみ、false: 未完了のみ、指定なし: 全件）
-        db_session: データベースセッション
-
-    Returns:
-        {
-            "data": [TaskResponse, ...],
-            "message": "タスク一覧を取得しました"
-        }
-    """
-    service = TaskService(db_session)
-    tasks: List[Task] = service.list_tasks(
+    """タスク一覧を取得."""
+    tasks = service.list_tasks(
         user_id=current_user.id, skip=skip, limit=limit, is_completed=is_completed
     )
-
-    # Task を TaskResponse に変換
-    task_responses = [
-        TaskResponse(
-            id=task.id,
-            user_id=task.user_id,
-            title=task.title,
-            description=task.description,
-            is_completed=task.is_completed,
-            completed_at=task.completed_at,
-            due_date=task.due_date,
-            order=task.order,
-            created_at=task.created_at or datetime.now(JST),
-            updated_at=task.updated_at or datetime.now(JST),
-        )
-        for task in tasks
-    ]
-
     return {
-        "data": task_responses,
+        "data": [TaskResponse.model_validate(t) for t in tasks],
         "message": "タスク一覧を取得しました",
     }
 
@@ -80,73 +44,28 @@ def list_tasks(
 def create_task(
     current_user: CurrentUser,
     body: dict = Body(default={}),
-    db_session: Session = Depends(get_session),
+    service: TaskService = Depends(_get_task_service),
 ) -> Union[dict, JSONResponse]:
-    """新規タスクを作成.
-
-    リクエスト本体に TaskCreate スキーマで指定されたタスク情報を使用して
-    新規タスクを作成します。作成されたタスクはレスポンス本体に返されます。
-
-    Args:
-        request: リクエストオブジェクト
-        db_session: データベースセッション
-
-    Returns:
-        {
-            "data": TaskResponse,
-            "message": "タスクが作成されました"
-        }
-
-    Raises:
-        422: リクエストボディのバリデーションエラー
-    """
+    """新規タスクを作成."""
     try:
-        # JSON をパースして TaskCreate にバリデーション
         task_create = TaskCreate(**body)
     except ValidationError as e:
-        # Pydantic バリデーションエラーを 400 で返す
-        error_messages = []
-        for error in e.errors():
-            field = error["loc"][0] if error["loc"] else "unknown"
-            msg = error["msg"]
-            error_messages.append(f"{field}: {msg}")
-
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
-                "errors": error_messages,
+                "errors": [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()],
                 "message": "入力データが正しくありません",
             },
         )
     except Exception as e:
-        # JSON パースエラーなど
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "errors": [str(e)],
-                "message": "リクエストボディが不正です",
-            },
+            content={"errors": [str(e)], "message": "リクエストボディが不正です"},
         )
 
-    service = TaskService(db_session)
-    created_task: Task = service.create_task(task_create, current_user.id)
-
-    # Task を TaskResponse に変換
-    task_response = TaskResponse(
-        id=created_task.id,
-        user_id=created_task.user_id,
-        title=created_task.title,
-        description=created_task.description,
-        is_completed=created_task.is_completed,
-        completed_at=created_task.completed_at,
-        due_date=created_task.due_date,
-        order=created_task.order,
-        created_at=created_task.created_at or datetime.now(JST),
-        updated_at=created_task.updated_at or datetime.now(JST),
-    )
-
+    created_task = service.create_task(task_create, current_user.id)
     return {
-        "data": task_response,
+        "data": TaskResponse.model_validate(created_task),
         "message": "タスクが作成されました",
     }
 
@@ -155,53 +74,18 @@ def create_task(
 def get_task(
     current_user: CurrentUser,
     task_id: UUID,
-    db_session: Session = Depends(get_session),
+    service: TaskService = Depends(_get_task_service),
 ) -> Union[dict, JSONResponse]:
-    """タスクを取得.
-
-    指定されたタスク ID のタスク情報を取得します。
-
-    Args:
-        task_id: タスク ID
-        db_session: データベースセッション
-
-    Returns:
-        {
-            "data": TaskResponse,
-            "message": "タスクが取得されました"
-        }
-
-    Raises:
-        404: タスクが見つかりません
-    """
-    service = TaskService(db_session)
+    """タスクを取得."""
     try:
-        task: Task = service.get_task(task_id, current_user.id)
+        task = service.get_task(task_id, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content={
-                "error": str(e),
-                "message": "タスクが見つかりません",
-            },
+            content={"error": str(e), "message": "タスクが見つかりません"},
         )
-
-    # Task を TaskResponse に変換
-    task_response = TaskResponse(
-        id=task.id,
-        user_id=task.user_id,
-        title=task.title,
-        description=task.description,
-        is_completed=task.is_completed,
-        completed_at=task.completed_at,
-        due_date=task.due_date,
-        order=task.order,
-        created_at=task.created_at or datetime.now(JST),
-        updated_at=task.updated_at or datetime.now(JST),
-    )
-
     return {
-        "data": task_response,
+        "data": TaskResponse.model_validate(task),
         "message": "タスクが取得されました",
     }
 
@@ -211,120 +95,50 @@ def update_task(
     current_user: CurrentUser,
     task_id: UUID,
     body: dict = Body(default={}),
-    db_session: Session = Depends(get_session),
+    service: TaskService = Depends(_get_task_service),
 ) -> Union[dict, JSONResponse]:
-    """タスクを更新.
-
-    指定されたタスク ID のタスク情報を更新します。
-    リクエスト本体で指定されたフィールドのみが更新されます。
-
-    Args:
-        task_id: タスク ID
-        request: リクエストオブジェクト
-        db_session: データベースセッション
-
-    Returns:
-        {
-            "data": TaskResponse,
-            "message": "タスクが更新されました"
-        }
-
-    Raises:
-        400: リクエストボディのバリデーションエラー
-        404: タスクが見つかりません
-    """
+    """タスクを更新."""
     try:
-        # JSON をパースして TaskUpdate にバリデーション
         task_update = TaskUpdate(**body)
     except ValidationError as e:
-        # Pydantic バリデーションエラーを 400 で返す
-        error_messages = []
-        for error in e.errors():
-            field = error["loc"][0] if error["loc"] else "unknown"
-            msg = error["msg"]
-            error_messages.append(f"{field}: {msg}")
-
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
-                "errors": error_messages,
+                "errors": [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()],
                 "message": "入力データが正しくありません",
             },
         )
     except Exception as e:
-        # JSON パースエラーなど
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "errors": [str(e)],
-                "message": "リクエストボディが不正です",
-            },
+            content={"errors": [str(e)], "message": "リクエストボディが不正です"},
         )
 
-    service = TaskService(db_session)
     try:
-        updated_task: Task = service.update_task(task_id, task_update, current_user.id)
+        updated_task = service.update_task(task_id, task_update, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content={
-                "error": str(e),
-                "message": "タスクが見つかりません",
-            },
+            content={"error": str(e), "message": "タスクが見つかりません"},
         )
-
-    # Task を TaskResponse に変換
-    task_response = TaskResponse(
-        id=updated_task.id,
-        user_id=updated_task.user_id,
-        title=updated_task.title,
-        description=updated_task.description,
-        is_completed=updated_task.is_completed,
-        completed_at=updated_task.completed_at,
-        due_date=updated_task.due_date,
-        order=updated_task.order,
-        created_at=updated_task.created_at or datetime.now(JST),
-        updated_at=updated_task.updated_at or datetime.now(JST),
-    )
-
     return {
-        "data": task_response,
+        "data": TaskResponse.model_validate(updated_task),
         "message": "タスクが更新されました",
     }
 
 
-@router.delete(
-    "/{task_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{task_id}", response_model=None)
 def delete_task(
     current_user: CurrentUser,
     task_id: UUID,
-    db_session: Session = Depends(get_session),
-) -> Union[None, JSONResponse]:
-    """タスクを削除.
-
-    指定されたタスク ID のタスクを削除します。
-
-    Args:
-        task_id: タスク ID
-        db_session: データベースセッション
-
-    Returns:
-        204 No Content
-
-    Raises:
-        404: タスクが見つかりません
-    """
-    service = TaskService(db_session)
+    service: TaskService = Depends(_get_task_service),
+) -> Union[Response, JSONResponse]:
+    """タスクを削除."""
     try:
         service.delete_task(task_id, current_user.id)
     except NotFoundException as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content={
-                "error": str(e),
-                "message": "タスクが見つかりません",
-            },
+            content={"error": str(e), "message": "タスクが見つかりません"},
         )
-
-    return None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

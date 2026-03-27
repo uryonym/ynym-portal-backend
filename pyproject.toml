@@ -10,7 +10,6 @@ dependencies = [
     "pydantic>=2.12.5",
     "pydantic-settings>=2.13.1",
     "psycopg[binary]>=3.3.3",
-    "sqlmodel",
     "python-jose[cryptography]",
     "passlib[bcrypt]",
     "greenlet>=3.2.4",
@@ -24,6 +23,7 @@ dev = [
     "mypy",
     "mkdocs",
     "mkdocs-material",
+    "pytest-mock",
 ]
 
 [tool.pytest.ini_options]

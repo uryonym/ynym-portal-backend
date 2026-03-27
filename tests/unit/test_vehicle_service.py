@@ -1,4 +1,4 @@
-"""Vehicle（車）サービス単体テスト."""
+"""VehicleService ユニットテスト（VehicleRepository をモック）."""
 
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
@@ -7,6 +7,7 @@ from uuid import UUID
 import pytest
 
 from app.models.vehicle import Vehicle
+from app.repositories.vehicle_repository import VehicleRepository
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate
 from app.services.vehicle_service import VehicleService
 from app.utils.exceptions import NotFoundException
@@ -16,230 +17,156 @@ TEST_USER_ID = UUID("550e8400-e29b-41d4-a716-446655440000")
 TEST_VEHICLE_ID = UUID("550e8400-e29b-41d4-a716-446655440001")
 
 
+def _make_vehicle(**kwargs) -> Vehicle:
+    defaults = dict(
+        id=TEST_VEHICLE_ID,
+        user_id=TEST_USER_ID,
+        name="マイカー",
+        seq=1,
+        maker="Toyota",
+        model="Prius",
+        year=None,
+        number=None,
+        tank_capacity=None,
+        deleted_at=None,
+        created_at=datetime.now(JST),
+        updated_at=datetime.now(JST),
+    )
+    defaults.update(kwargs)
+    v = Vehicle(**{k: defaults[k] for k in ["user_id", "name", "seq", "maker", "model"]})
+    for k, val in defaults.items():
+        object.__setattr__(v, k, val) if hasattr(v, k) else setattr(v, k, val)
+    return v
+
+
 @pytest.fixture
-def mock_db_session() -> MagicMock:
-    """モック DB セッション."""
-    return MagicMock()
+def mock_repo() -> MagicMock:
+    repo = MagicMock(spec=VehicleRepository)
+    repo.save.side_effect = lambda obj: obj
+    return repo
 
 
 class TestVehicleServiceListVehicles:
-    """list_vehicles メソッドテスト."""
-    def test_list_vehicles_empty(self, mock_db_session: MagicMock) -> None:
+    """list_vehicles テスト."""
+
+    def test_list_vehicles_empty(self, mock_repo: MagicMock) -> None:
         """車一覧が空の場合."""
-        # モック設定
-        mock_result = MagicMock()
-        mock_result.scalars().all.return_value = []
-        mock_db_session.execute.return_value = mock_result
+        mock_repo.list_by_user.return_value = []
+        service = VehicleService(mock_repo)
+        assert service.list_vehicles(TEST_USER_ID) == []
+        mock_repo.list_by_user.assert_called_once_with(TEST_USER_ID, 0, 100)
 
-        service = VehicleService(mock_db_session)
-        vehicles = service.list_vehicles(TEST_USER_ID)
-
-        assert vehicles == []
-    def test_list_vehicles_with_multiple_vehicles(
-        self, mock_db_session: MagicMock
-    ) -> None:
+    def test_list_vehicles_multiple(self, mock_repo: MagicMock) -> None:
         """複数の車がある場合."""
-        # テスト用車データ
-        vehicle1 = Vehicle(
-            id=UUID("550e8400-e29b-41d4-a716-446655440001"),
-            user_id=TEST_USER_ID,
-            name="マイカー1",
-            maker="Toyota",
-            model="Prius",
-            created_at=datetime.now(JST),
-            updated_at=datetime.now(JST),
-        )
-        vehicle2 = Vehicle(
-            id=UUID("550e8400-e29b-41d4-a716-446655440002"),
-            user_id=TEST_USER_ID,
-            name="マイカー2",
-            maker="Honda",
-            model="Fit",
-            created_at=datetime.now(JST),
-            updated_at=datetime.now(JST),
-        )
-
-        mock_result = MagicMock()
-        mock_result.scalars().all.return_value = [vehicle1, vehicle2]
-        mock_db_session.execute.return_value = mock_result
-
-        service = VehicleService(mock_db_session)
-        vehicles = service.list_vehicles(TEST_USER_ID)
-
-        assert len(vehicles) == 2
-        assert vehicles[0].name == "マイカー1"
-        assert vehicles[1].name == "マイカー2"
+        v1 = MagicMock(spec=Vehicle); v1.name = "マイカー1"
+        v2 = MagicMock(spec=Vehicle); v2.name = "マイカー2"
+        mock_repo.list_by_user.return_value = [v1, v2]
+        service = VehicleService(mock_repo)
+        result = service.list_vehicles(TEST_USER_ID)
+        assert len(result) == 2
+        assert result[0].name == "マイカー1"
+        assert result[1].name == "マイカー2"
 
 
 class TestVehicleServiceGetVehicle:
-    """get_vehicle メソッドテスト."""
-    def test_get_vehicle_success(self, mock_db_session: MagicMock) -> None:
+    """get_vehicle テスト."""
+
+    def test_get_vehicle_success(self, mock_repo: MagicMock) -> None:
         """車取得成功."""
-        vehicle = Vehicle(
-            id=TEST_VEHICLE_ID,
-            user_id=TEST_USER_ID,
-            name="マイカー",
-            maker="Toyota",
-            model="Prius",
-            created_at=datetime.now(JST),
-            updated_at=datetime.now(JST),
-        )
+        vehicle = Vehicle(user_id=TEST_USER_ID, name="マイカー", seq=1, maker="Toyota", model="Prius")
+        vehicle.id = TEST_VEHICLE_ID
+        mock_repo.get_by_id_and_user.return_value = vehicle
+        service = VehicleService(mock_repo)
+        result = service.get_vehicle(TEST_VEHICLE_ID, TEST_USER_ID)
+        assert result.name == "マイカー"
 
-        mock_result = MagicMock()
-        mock_result.scalars().one_or_none.return_value = vehicle
-        mock_db_session.execute.return_value = mock_result
-
-        service = VehicleService(mock_db_session)
-        retrieved_vehicle = service.get_vehicle(TEST_VEHICLE_ID, TEST_USER_ID)
-
-        assert retrieved_vehicle.id == TEST_VEHICLE_ID
-        assert retrieved_vehicle.name == "マイカー"
-    def test_get_vehicle_not_found_fails(
-        self, mock_db_session: MagicMock
-    ) -> None:
+    def test_get_vehicle_not_found(self, mock_repo: MagicMock) -> None:
         """車が見つからない場合は例外."""
-        mock_result = MagicMock()
-        mock_result.scalars().one_or_none.return_value = None
-        mock_db_session.execute.return_value = mock_result
-
-        service = VehicleService(mock_db_session)
-
+        mock_repo.get_by_id_and_user.return_value = None
+        service = VehicleService(mock_repo)
         with pytest.raises(NotFoundException) as exc_info:
             service.get_vehicle(TEST_VEHICLE_ID, TEST_USER_ID)
-
         assert f"車 ID {TEST_VEHICLE_ID}" in str(exc_info.value)
 
 
 class TestVehicleServiceCreateVehicle:
-    """create_vehicle メソッドテスト."""
-    def test_create_vehicle_success(self, mock_db_session: MagicMock) -> None:
-        """車作成成功."""
-        vehicle_create = VehicleCreate(
-            name="マイカー",
-            maker="Toyota",
-            model="Prius",
-            year=2023,
-            number="東京 123あ 1234",
-            tank_capacity=50.0,
-        )
+    """create_vehicle テスト."""
 
-        # モック設定: execute の戻り値に one_or_none メソッドを追加
-        mock_result = MagicMock()
-        mock_result.scalars().one_or_none.return_value = None  # 最初の seq 取得で None
-        mock_db_session.execute.return_value = mock_result
+    def test_create_vehicle_success(self, mock_repo: MagicMock) -> None:
+        """車作成成功（seq は get_max_seq + 1）."""
+        mock_repo.get_max_seq.return_value = 0
+        vehicle_create = VehicleCreate(name="マイカー", maker="Toyota", model="Prius", year=2023)
+        service = VehicleService(mock_repo)
+        result = service.create_vehicle(vehicle_create, TEST_USER_ID)
+        assert result.name == "マイカー"
+        assert result.seq == 1
+        mock_repo.save.assert_called_once()
 
-        # モック設定: add → commit → refresh の流れ
-        def mock_refresh(obj: Vehicle) -> None:
-            obj.id = TEST_VEHICLE_ID
-            obj.created_at = datetime.now(JST)
-            obj.updated_at = datetime.now(JST)
+    def test_create_vehicle_seq_increments(self, mock_repo: MagicMock) -> None:
+        """2台目は seq=2."""
+        mock_repo.get_max_seq.return_value = 1
+        vehicle_create = VehicleCreate(name="2台目", maker="Honda", model="Fit")
+        service = VehicleService(mock_repo)
+        result = service.create_vehicle(vehicle_create, TEST_USER_ID)
+        assert result.seq == 2
 
-        mock_db_session.refresh = mock_refresh
-
-        service = VehicleService(mock_db_session)
-        created_vehicle = service.create_vehicle(vehicle_create, TEST_USER_ID)
-
-        assert created_vehicle.name == "マイカー"
-        assert created_vehicle.maker == "Toyota"
-        assert created_vehicle.year == 2023
-        assert created_vehicle.seq == 1  # 最初の車は seq=1
-    def test_create_vehicle_with_minimal_fields(
-        self, mock_db_session: MagicMock
-    ) -> None:
+    def test_create_vehicle_minimal_fields(self, mock_repo: MagicMock) -> None:
         """最小限フィールドで作成."""
-        vehicle_create = VehicleCreate(
-            name="マイカー",
-            maker="Toyota",
-            model="Prius",
-        )
-
-        # モック設定: execute の戻り値に one_or_none メソッドを追加
-        mock_result = MagicMock()
-        mock_result.scalars().one_or_none.return_value = None  # 最初の seq 取得で None
-        mock_db_session.execute.return_value = mock_result
-
-        def mock_refresh(obj: Vehicle) -> None:
-            obj.id = TEST_VEHICLE_ID
-            obj.created_at = datetime.now(JST)
-            obj.updated_at = datetime.now(JST)
-
-        mock_db_session.refresh = mock_refresh
-
-        service = VehicleService(mock_db_session)
-        created_vehicle = service.create_vehicle(vehicle_create, TEST_USER_ID)
-
-        assert created_vehicle.name == "マイカー"
-        assert created_vehicle.year is None
-        assert created_vehicle.number is None
-        assert created_vehicle.seq == 1  # 最初の車は seq=1
+        mock_repo.get_max_seq.return_value = 0
+        vehicle_create = VehicleCreate(name="マイカー", maker="Toyota", model="Prius")
+        service = VehicleService(mock_repo)
+        result = service.create_vehicle(vehicle_create, TEST_USER_ID)
+        assert result.year is None
+        assert result.number is None
+        assert result.seq == 1
 
 
 class TestVehicleServiceUpdateVehicle:
-    """update_vehicle メソッドテスト."""
-    def test_update_vehicle_success(self, mock_db_session: MagicMock) -> None:
-        """車更新成功."""
-        original_vehicle = Vehicle(
-            id=TEST_VEHICLE_ID,
-            user_id=TEST_USER_ID,
-            name="古い名前",
-            maker="Toyota",
-            model="Prius",
-            created_at=datetime.now(JST),
-            updated_at=datetime.now(JST),
-        )
+    """update_vehicle テスト."""
 
-        # get_vehicle のモック
-        mock_result = MagicMock()
-        mock_result.scalars().one_or_none.return_value = original_vehicle
-        mock_db_session.execute.return_value = mock_result
+    def test_update_vehicle_name(self, mock_repo: MagicMock) -> None:
+        """名前を更新できる."""
+        vehicle = Vehicle(user_id=TEST_USER_ID, name="古い名前", seq=1, maker="Toyota", model="Prius")
+        mock_repo.get_by_id_and_user.return_value = vehicle
+        service = VehicleService(mock_repo)
+        result = service.update_vehicle(TEST_VEHICLE_ID, VehicleUpdate(name="新しい名前"), TEST_USER_ID)
+        assert result.name == "新しい名前"
+        mock_repo.save.assert_called_once()
 
-        # refresh のモック
-        def mock_refresh(obj: Vehicle) -> None:
-            pass
+    def test_update_vehicle_partial(self, mock_repo: MagicMock) -> None:
+        """部分更新（year のみ）."""
+        vehicle = Vehicle(user_id=TEST_USER_ID, name="マイカー", seq=1, maker="Toyota", model="Prius")
+        vehicle.year = 2020
+        mock_repo.get_by_id_and_user.return_value = vehicle
+        service = VehicleService(mock_repo)
+        result = service.update_vehicle(TEST_VEHICLE_ID, VehicleUpdate(year=2023), TEST_USER_ID)
+        assert result.year == 2023
+        assert result.name == "マイカー"
 
-        mock_db_session.refresh = mock_refresh
+    def test_update_vehicle_not_found(self, mock_repo: MagicMock) -> None:
+        """車が見つからない場合は例外."""
+        mock_repo.get_by_id_and_user.return_value = None
+        service = VehicleService(mock_repo)
+        with pytest.raises(NotFoundException):
+            service.update_vehicle(TEST_VEHICLE_ID, VehicleUpdate(name="X"), TEST_USER_ID)
 
-        vehicle_update = VehicleUpdate(name="新しい名前")
 
-        service = VehicleService(mock_db_session)
-        updated_vehicle = service.update_vehicle(
-            TEST_VEHICLE_ID, vehicle_update, TEST_USER_ID
-        )
+class TestVehicleServiceDeleteVehicle:
+    """delete_vehicle テスト."""
 
-        assert updated_vehicle.name == "新しい名前"
-    def test_update_vehicle_partial(self, mock_db_session: MagicMock) -> None:
-        """車の部分更新（year のみ更新）."""
-        original_vehicle = Vehicle(
-            id=TEST_VEHICLE_ID,
-            user_id=TEST_USER_ID,
-            name="マイカー",
-            maker="Toyota",
-            model="Prius",
-            year=2020,
-            created_at=datetime.now(JST),
-            updated_at=datetime.now(JST),
-        )
+    def test_delete_vehicle_sets_deleted_at(self, mock_repo: MagicMock) -> None:
+        """論理削除で deleted_at が設定される."""
+        vehicle = Vehicle(user_id=TEST_USER_ID, name="マイカー", seq=1, maker="Toyota", model="Prius")
+        vehicle.deleted_at = None
+        mock_repo.get_by_id_and_user.return_value = vehicle
+        service = VehicleService(mock_repo)
+        service.delete_vehicle(TEST_VEHICLE_ID, TEST_USER_ID)
+        assert vehicle.deleted_at is not None
+        mock_repo.save.assert_called_once()
 
-        # get_vehicle のモック
-        mock_result = MagicMock()
-        mock_result.scalars().one_or_none.return_value = original_vehicle
-        mock_db_session.execute.return_value = mock_result
-
-        # refresh のモック
-        def mock_refresh(obj: Vehicle) -> None:
-            pass
-
-        mock_db_session.refresh = mock_refresh
-
-        vehicle_update = VehicleUpdate(year=2023)
-
-        service = VehicleService(mock_db_session)
-        updated_vehicle = service.update_vehicle(
-            TEST_VEHICLE_ID, vehicle_update, TEST_USER_ID
-        )
-
-        # 更新したフィールド
-        assert updated_vehicle.year == 2023
-        # 更新していないフィールドは変わらない
-        assert updated_vehicle.name == "マイカー"
-        assert updated_vehicle.maker == "Toyota"
+    def test_delete_vehicle_not_found(self, mock_repo: MagicMock) -> None:
+        """車が見つからない場合は例外."""
+        mock_repo.get_by_id_and_user.return_value = None
+        service = VehicleService(mock_repo)
+        with pytest.raises(NotFoundException):
+            service.delete_vehicle(TEST_VEHICLE_ID, TEST_USER_ID)

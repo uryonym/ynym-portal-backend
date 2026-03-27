@@ -1,34 +1,21 @@
 """タスク管理サービス層."""
 
+from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import asc, select
-from sqlalchemy.orm import Session
-from sqlalchemy.sql import nulls_last
-from sqlmodel import col
-
+from app.models.base import JST
 from app.models.task import Task
+from app.repositories.task_repository import TaskRepository
 from app.schemas.task import TaskCreate, TaskUpdate
 from app.utils.exceptions import NotFoundException
 
 
 class TaskService:
-    """
-    タスク管理ビジネスロジック層.
+    """タスク管理ビジネスロジック層."""
 
-    データベース操作とビジネスロジックを分離し、
-    API エンドポイントから使用される。
-    """
-
-    def __init__(self, db_session: Session) -> None:
-        """
-        TaskService を初期化.
-
-        Args:
-            db_session: データベースセッション（依存性注入）
-        """
-        self.db_session = db_session
+    def __init__(self, task_repo: TaskRepository) -> None:
+        self.task_repo = task_repo
 
     def list_tasks(
         self,
@@ -37,94 +24,22 @@ class TaskService:
         limit: int = 100,
         is_completed: Optional[bool] = None,
     ) -> List[Task]:
-        """
-        タスク一覧を取得.
-
-        期日が近い順（昇順）でソートされ、期日なしのタスクは
-        作成日時の古い順で期日ありのタスクの後に表示される。
-
-        Args:
-            user_id: ユーザー ID（将来的に FK として使用）
-            skip: スキップするレコード数（ページネーション）
-            limit: 取得するレコード数（デフォルト 100、最大 1000）
-            is_completed: 完了状態でフィルタ（None: 全件、True: 完了のみ、False: 未完了のみ）
-
-        Returns:
-            Task のリスト
-
-        Example:
-            >>> service = TaskService(db_session)
-            >>> tasks = await service.list_tasks(user_id, skip=0, limit=10)
-            >>> incomplete_tasks = await service.list_tasks(user_id, is_completed=False)
-        """
-        stmt = (
-            select(Task)
-            .where(col(Task.user_id) == user_id)
-            .where(col(Task.deleted_at).is_(None))  # 論理削除フィルター（将来）
-        )
-
-        # is_completed フィルタ
-        if is_completed is not None:
-            stmt = stmt.where(col(Task.is_completed) == is_completed)
-
-        stmt = (
-            stmt.order_by(
-                nulls_last(asc(col(Task.due_date))),
-                asc(col(Task.created_at)),
-            )
-            .offset(skip)
-            .limit(limit)
-        )
-
-        result = self.db_session.execute(stmt)
-        return list(result.scalars().all())
+        """タスク一覧を取得（期日昇順、期日なしは末尾）."""
+        return self.task_repo.list_by_user(user_id, skip, limit, is_completed)
 
     def get_task(self, task_id: UUID, user_id: UUID) -> Task:
-        """
-        タスクを ID で取得.
-
-        Args:
-            task_id: タスク ID
-            user_id: ユーザー ID（所有権確認用）
-
-        Returns:
-            Task オブジェクト
+        """タスクを ID で取得.
 
         Raises:
-            NotFoundException: タスクが見つからない場合
-
-        Example:
-            >>> service = TaskService(db_session)
-            >>> task = await service.get_task(task_id, user_id)
+            NotFoundException: タスクが存在しない場合
         """
-        stmt = (
-            select(Task)
-            .where(col(Task.id) == task_id)
-            .where(col(Task.user_id) == user_id)
-            .where(col(Task.deleted_at).is_(None))  # 論理削除フィルター（将来）
-        )
-        result = self.db_session.execute(stmt)
-        task = result.scalars().one_or_none()
+        task = self.task_repo.get_by_id_and_user(task_id, user_id)
         if not task:
             raise NotFoundException(f"タスク ID {task_id} が見つかりません")
         return task
 
     def create_task(self, task_create: TaskCreate, user_id: UUID) -> Task:
-        """
-        新規タスクを作成.
-
-        Args:
-            task_create: タスク作成スキーマ
-            user_id: タスク所有者のユーザー ID
-
-        Returns:
-            作成された Task オブジェクト
-
-        Example:
-            >>> service = TaskService(db_session)
-            >>> task_data = TaskCreate(title="買い物", description="牛乳を買う")
-            >>> task = await service.create_task(task_data, user_id)
-        """
+        """新規タスクを作成."""
         task = Task(
             user_id=user_id,
             title=task_create.title,
@@ -132,76 +47,30 @@ class TaskService:
             due_date=task_create.due_date,
             is_completed=task_create.is_completed or False,
         )
-        self.db_session.add(task)
-        self.db_session.commit()
-        self.db_session.refresh(task)
-        return task
+        return self.task_repo.save(task)
 
     def update_task(
-        self,
-        task_id: UUID,
-        task_update: TaskUpdate,
-        user_id: UUID,
+        self, task_id: UUID, task_update: TaskUpdate, user_id: UUID
     ) -> Task:
-        """
-        既存タスクを更新（部分更新対応）.
+        """既存タスクを部分更新.
 
-        Args:
-            task_id: タスク ID
-            task_update: タスク更新スキーマ
-            user_id: ユーザー ID（所有権確認用）
-
-        Returns:
-            更新された Task オブジェクト
-
-        Raises:
-            NotFoundException: タスクが見つからない場合
-
-        Example:
-            >>> service = TaskService(db_session)
-            >>> update_data = TaskUpdate(title="食材の買い物")
-            >>> task = await service.update_task(task_id, update_data, user_id)
+        is_completed を True に変更した場合、completed_at を自動設定する。
         """
         task = self.get_task(task_id, user_id)
-
-        # 更新されたフィールドのみ適用（部分更新）
         update_data = task_update.model_dump(exclude_unset=True)
 
-        # is_completed が True に変更された場合、completed_at を自動設定
         if "is_completed" in update_data:
             if update_data["is_completed"] and not task.is_completed:
-                # 未完了→完了に変更された場合
-                from datetime import datetime
-                from app.models.base import JST
-
                 update_data["completed_at"] = datetime.now(JST)
             elif not update_data["is_completed"] and task.is_completed:
-                # 完了→未完了に変更された場合、completed_at をクリア
                 update_data["completed_at"] = None
 
         for field, value in update_data.items():
             setattr(task, field, value)
 
-        self.db_session.add(task)
-        self.db_session.commit()
-        self.db_session.refresh(task)
-        return task
+        return self.task_repo.save(task)
 
     def delete_task(self, task_id: UUID, user_id: UUID) -> None:
-        """
-        タスクを削除（物理削除）.
-
-        Args:
-            task_id: タスク ID
-            user_id: ユーザー ID（所有権確認用）
-
-        Raises:
-            NotFoundException: タスクが見つからない場合
-
-        Example:
-            >>> service = TaskService(db_session)
-            >>> await service.delete_task(task_id, user_id)
-        """
+        """タスクを物理削除."""
         task = self.get_task(task_id, user_id)
-        self.db_session.delete(task)
-        self.db_session.commit()
+        self.task_repo.delete(task)

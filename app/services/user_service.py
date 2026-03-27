@@ -1,40 +1,34 @@
+"""ユーザー管理サービス."""
+
 from __future__ import annotations
 
 from typing import Optional
 
-from sqlalchemy.orm import Session
-from sqlmodel import select
-
 from app.models.user import User
+from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserCreate
 
 
 class UserService:
-    def __init__(self, db_session: Session) -> None:
-        self.db_session = db_session
+    """ユーザー管理ビジネスロジック層."""
+
+    def __init__(self, user_repo: UserRepository) -> None:
+        self.user_repo = user_repo
 
     def get_by_email(self, email: str) -> Optional[User]:
-        """Get user by email."""
-        stmt = select(User).where(User.email == email)
-        result = self.db_session.execute(stmt)
-        return result.scalars().one_or_none()
+        """メールアドレスでユーザーを取得."""
+        return self.user_repo.get_by_email(email)
 
     def get_or_create(self, user_in: UserCreate) -> User:
-        """Get existing user or create new one (upsert by email)."""
-        user = self.get_by_email(email=user_in.email)
-
+        """メールアドレスでユーザーを取得、存在しない場合は作成（upsert）."""
+        user = self.get_by_email(user_in.email)
         if user:
             user.name = user_in.name
             user.avatar_url = user_in.avatar_url
-            self.db_session.add(user)
-            self.db_session.commit()
-            self.db_session.refresh(user)
-            return user
-
+            return self.user_repo.save(user)
         user = User(
-            email=user_in.email, name=user_in.name, avatar_url=user_in.avatar_url
+            email=user_in.email,
+            name=user_in.name,
+            avatar_url=user_in.avatar_url,
         )
-        self.db_session.add(user)
-        self.db_session.commit()
-        self.db_session.refresh(user)
-        return user
+        return self.user_repo.save(user)

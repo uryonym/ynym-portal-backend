@@ -1,120 +1,40 @@
 """Vehicle（車）管理サービス."""
 
+from datetime import datetime
 from typing import List
 from uuid import UUID
 
-from sqlalchemy import and_, asc, desc, select
-from sqlalchemy.orm import Session
-
+from app.models.base import JST
 from app.models.vehicle import Vehicle
+from app.repositories.vehicle_repository import VehicleRepository
 from app.schemas.vehicle import VehicleCreate, VehicleUpdate
 from app.utils.exceptions import NotFoundException
 
 
 class VehicleService:
-    """車管理サービス."""
+    """車両管理ビジネスロジック層."""
 
-    def __init__(self, db_session: Session) -> None:
-        """初期化.
+    def __init__(self, vehicle_repo: VehicleRepository) -> None:
+        self.vehicle_repo = vehicle_repo
 
-        Args:
-            db_session: データベースセッション
-        """
-        self.db_session = db_session
-
-    def list_vehicles(
-        self,
-        user_id: UUID,
-        skip: int = 0,
-        limit: int = 100,
-    ) -> List[Vehicle]:
-        """ユーザーが所有する車一覧を取得.
-
-        Args:
-            user_id: ユーザー ID
-            skip: スキップするレコード数
-            limit: 取得するレコード数
-
-        Returns:
-            Vehicle のリスト
-        """
-        stmt = (
-            select(Vehicle)
-            .where(
-                and_(
-                    Vehicle.user_id == user_id,
-                    Vehicle.deleted_at.is_(None),
-                )
-            )
-            .order_by(asc(Vehicle.seq))
-            .offset(skip)
-            .limit(limit)
-        )
-        result = self.db_session.execute(stmt)
-        return result.scalars().all()
+    def list_vehicles(self, user_id: UUID, skip: int = 0, limit: int = 100) -> List[Vehicle]:
+        """ユーザーの車両一覧を取得."""
+        return self.vehicle_repo.list_by_user(user_id, skip, limit)
 
     def get_vehicle(self, vehicle_id: UUID, user_id: UUID) -> Vehicle:
-        """特定の車を取得.
-
-        Args:
-            vehicle_id: 車 ID
-            user_id: ユーザー ID
-
-        Returns:
-            Vehicle オブジェクト
+        """車両を ID で取得.
 
         Raises:
-            NotFoundException: 車が見つかりません
+            NotFoundException: 車両が存在しない場合
         """
-        stmt = select(Vehicle).where(
-            and_(
-                Vehicle.id == vehicle_id,
-                Vehicle.user_id == user_id,
-                Vehicle.deleted_at.is_(None),
-            )
-        )
-        result = self.db_session.execute(stmt)
-        vehicle = result.scalars().one_or_none()
-
+        vehicle = self.vehicle_repo.get_by_id_and_user(vehicle_id, user_id)
         if not vehicle:
             raise NotFoundException(f"車 ID {vehicle_id} が見つかりません")
-
         return vehicle
 
-    def create_vehicle(
-        self,
-        vehicle_create: VehicleCreate,
-        user_id: UUID,
-    ) -> Vehicle:
-        """新規車を作成.
-
-        seq（シーケンス番号）はユーザーが所有する車の中で自動採番されます。
-
-        Args:
-            vehicle_create: 車作成スキーマ
-            user_id: ユーザー ID
-
-        Returns:
-            作成された Vehicle オブジェクト
-        """
-        # ユーザーが既に所有している車の最大 seq を取得
-        stmt = (
-            select(Vehicle)
-            .where(
-                and_(
-                    Vehicle.user_id == user_id,
-                    Vehicle.deleted_at.is_(None),
-                )
-            )
-            .order_by(desc(Vehicle.seq))
-            .limit(1)
-        )
-        result = self.db_session.execute(stmt)
-        last_vehicle = result.scalars().one_or_none()
-
-        # 新しい seq を決定（既存最大値 + 1、存在しない場合は 1）
-        next_seq = (last_vehicle.seq + 1) if last_vehicle else 1
-
+    def create_vehicle(self, vehicle_create: VehicleCreate, user_id: UUID) -> Vehicle:
+        """新規車両を作成（seq はユーザー内で自動採番）."""
+        next_seq = self.vehicle_repo.get_max_seq(user_id) + 1
         vehicle = Vehicle(
             user_id=user_id,
             name=vehicle_create.name,
@@ -125,10 +45,7 @@ class VehicleService:
             number=vehicle_create.number,
             tank_capacity=vehicle_create.tank_capacity,
         )
-        self.db_session.add(vehicle)
-        self.db_session.commit()
-        self.db_session.refresh(vehicle)
-        return vehicle
+        return self.vehicle_repo.save(vehicle)
 
     def update_vehicle(
         self,
@@ -136,48 +53,14 @@ class VehicleService:
         vehicle_update: VehicleUpdate,
         user_id: UUID,
     ) -> Vehicle:
-        """車情報を更新.
-
-        Args:
-            vehicle_id: 車 ID
-            vehicle_update: 車更新スキーマ
-            user_id: ユーザー ID
-
-        Returns:
-            更新された Vehicle オブジェクト
-
-        Raises:
-            NotFoundException: 車が見つかりません
-        """
+        """車両情報を部分更新."""
         vehicle = self.get_vehicle(vehicle_id, user_id)
-
-        # 部分更新: 指定されたフィールドのみ更新
-        update_data = vehicle_update.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
+        for field, value in vehicle_update.model_dump(exclude_unset=True).items():
             setattr(vehicle, field, value)
-
-        self.db_session.add(vehicle)
-        self.db_session.commit()
-        self.db_session.refresh(vehicle)
-        return vehicle
+        return self.vehicle_repo.save(vehicle)
 
     def delete_vehicle(self, vehicle_id: UUID, user_id: UUID) -> None:
-        """車を削除（論理削除）.
-
-        Args:
-            vehicle_id: 車 ID
-            user_id: ユーザー ID
-
-        Raises:
-            NotFoundException: 車が見つかりません
-        """
-        from datetime import datetime
-        from app.models.base import JST
-
+        """車両を論理削除."""
         vehicle = self.get_vehicle(vehicle_id, user_id)
-
-        # 論理削除
         vehicle.deleted_at = datetime.now(JST)
-
-        self.db_session.add(vehicle)
-        self.db_session.commit()
+        self.vehicle_repo.save(vehicle)

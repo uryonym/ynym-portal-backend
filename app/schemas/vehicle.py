@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class VehicleCreate(BaseModel):
@@ -190,7 +190,4 @@ class VehicleResponse(BaseModel):
     created_at: str
     updated_at: str
 
-    class Config:
-        """Pydantic 設定."""
-
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

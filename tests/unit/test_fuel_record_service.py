@@ -1,4 +1,4 @@
-"""FuelRecord（燃費記録）サービステスト."""
+"""FuelRecordService unit tests (FuelRecordRepository mocked)."""
 
 import pytest
 from datetime import datetime, timedelta, timezone
@@ -6,316 +6,178 @@ from unittest.mock import MagicMock
 from uuid import UUID
 
 from app.models.fuel_record import FuelRecord
+from app.repositories.fuel_record_repository import FuelRecordRepository
 from app.schemas.fuel_record import FuelRecordCreate, FuelRecordUpdate
 from app.services.fuel_record_service import FuelRecordService
 
 JST = timezone(timedelta(hours=9))
+USER_ID = UUID('550e8400-e29b-41d4-a716-446655440000')
+VEHICLE_ID = UUID('550e8400-e29b-41d4-a716-446655440001')
+RECORD_ID = UUID('550e8400-e29b-41d4-a716-446655440101')
+
+
+def _make_record(record_id, total_mileage, total_cost, unit_price, **kwargs):
+    now = kwargs.pop('dt', datetime.now(JST))
+    r = FuelRecord(
+        vehicle_id=VEHICLE_ID,
+        user_id=USER_ID,
+        refuel_datetime=now,
+        total_mileage=total_mileage,
+        fuel_type='halogen',
+        unit_price=unit_price,
+        total_cost=total_cost,
+        **kwargs,
+    )
+    r.id = record_id
+    return r
 
 
 @pytest.fixture
-def mock_db_session() -> MagicMock:
-    """モック DB セッション."""
-    return MagicMock()
+def mock_repo():
+    repo = MagicMock(spec=FuelRecordRepository)
+    repo.save.side_effect = lambda obj: obj
+    return repo
 
 
 class TestFuelRecordServiceListFuelRecords:
-    """FuelRecordService.list_fuel_records テスト."""
-    def test_list_fuel_records_empty(self, mock_db_session: MagicMock) -> None:
-        """燃費記録がない場合."""
-        user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
-        vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
+    """list_fuel_records tests."""
 
-        mock_result = MagicMock()
-        mock_result.scalars().all.return_value = []
-        mock_db_session.execute.return_value = mock_result
+    def test_empty_list(self, mock_repo):
+        """Returns empty list when no records."""
+        mock_repo.list_by_user_and_vehicle.return_value = []
+        service = FuelRecordService(mock_repo)
+        result = service.list_fuel_records(user_id=USER_ID, vehicle_id=VEHICLE_ID)
+        assert result == []
+        mock_repo.list_all_by_vehicle_asc.assert_not_called()
 
-        service = FuelRecordService(mock_db_session)
-        records = service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
+    def test_single_record_uses_total_mileage(self, mock_repo):
+        """First record uses total_mileage as distance."""
+        record = _make_record(RECORD_ID, total_mileage=500, total_cost=8500, unit_price=170)
+        mock_repo.list_by_user_and_vehicle.return_value = [record]
+        mock_repo.list_all_by_vehicle_asc.return_value = [record]
+        service = FuelRecordService(mock_repo)
+        results = service.list_fuel_records(user_id=USER_ID, vehicle_id=VEHICLE_ID)
+        assert len(results) == 1
+        assert results[0].distance_traveled == 500
+        assert results[0].fuel_amount == 50.0
+        assert results[0].fuel_efficiency == 10.0
 
-        assert records == []
-    def test_list_fuel_records_with_multiple_records(
-        self, mock_db_session: MagicMock
-    ) -> None:
-        """複数の燃費記録がある場合."""
-        user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
-        vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
-        now = datetime.now(JST)
-
-        record1 = FuelRecord(
-            id=UUID("550e8400-e29b-41d4-a716-446655440101"),
-            vehicle_id=vehicle_id,
-            user_id=user_id,
-            refuel_datetime=now,
-            total_mileage=100,
-            fuel_type="ハイオク",
-            unit_price=165,
-            total_cost=6600,
-            created_at=now,
-            updated_at=now,
-        )
-        record2 = FuelRecord(
-            id=UUID("550e8400-e29b-41d4-a716-446655440102"),
-            vehicle_id=vehicle_id,
-            user_id=user_id,
-            refuel_datetime=now,
-            total_mileage=200,
-            fuel_type="レギュラー",
-            unit_price=160,
-            total_cost=6400,
-            created_at=now,
-            updated_at=now,
-        )
-
-        mock_result = MagicMock()
-        mock_result.scalars().all.return_value = [record1, record2]
-        mock_db_session.execute.return_value = mock_result
-
-        service = FuelRecordService(mock_db_session)
-        records = service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
-
-        assert len(records) == 2
-        assert records[0].record.fuel_type == "ハイオク"
-        assert records[1].record.fuel_type == "レギュラー"
-
-
-class TestFuelRecordServiceFuelEfficiencyCalculation:
-    """燃費計算テスト."""
-    def test_fuel_efficiency_first_record(self, mock_db_session: MagicMock) -> None:
-        """最初のレコードは総走行距離がそのまま走行距離になる."""
-        user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
-        vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
-        now = datetime.now(JST)
-
-        record1 = FuelRecord(
-            id=UUID("550e8400-e29b-41d4-a716-446655440101"),
-            vehicle_id=vehicle_id,
-            user_id=user_id,
-            refuel_datetime=now,
-            total_mileage=500,
-            fuel_type="ハイオク",
-            unit_price=170,
-            total_cost=8500,  # 8500 / 170 = 50L
-            created_at=now,
-            updated_at=now,
-        )
-
-        mock_result = MagicMock()
-        mock_result.scalars().all.return_value = [record1]
-        mock_db_session.execute.return_value = mock_result
-
-        service = FuelRecordService(mock_db_session)
-        records = service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
-
-        assert len(records) == 1
-        # 最初の記録なので走行距離 = 総走行距離
-        assert records[0].distance_traveled == 500
-        # 給油量 = 8500 / 170 = 50L
-        assert records[0].fuel_amount == 50.0
-        # 燃費 = 500 / 50 = 10.0 km/L
-        assert records[0].fuel_efficiency == 10.0
-    def test_fuel_efficiency_with_previous_record(
-        self, mock_db_session: MagicMock
-    ) -> None:
-        """前回データがある場合は差分が走行距離になる."""
-        user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
-        vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
+    def test_two_records_calculates_diff(self, mock_repo):
+        """Difference between records is distance traveled."""
         now = datetime.now(JST)
         yesterday = now - timedelta(days=1)
-
-        # 最新レコード（総走行距離 1000km）
-        record_new = FuelRecord(
-            id=UUID("550e8400-e29b-41d4-a716-446655440102"),
-            vehicle_id=vehicle_id,
-            user_id=user_id,
-            refuel_datetime=now,
-            total_mileage=1000,
-            fuel_type="ハイオク",
-            unit_price=170,
-            total_cost=8500,  # 50L
-            created_at=now,
-            updated_at=now,
+        old = _make_record(
+            UUID('aaaaaaaa-0000-0000-0000-000000000001'),
+            total_mileage=500, total_cost=8250, unit_price=165, dt=yesterday,
         )
-
-        # 前回レコード（総走行距離 500km）
-        record_old = FuelRecord(
-            id=UUID("550e8400-e29b-41d4-a716-446655440101"),
-            vehicle_id=vehicle_id,
-            user_id=user_id,
-            refuel_datetime=yesterday,
-            total_mileage=500,
-            fuel_type="ハイオク",
-            unit_price=165,
-            total_cost=8250,
-            created_at=yesterday,
-            updated_at=yesterday,
+        new = _make_record(
+            UUID('aaaaaaaa-0000-0000-0000-000000000002'),
+            total_mileage=1000, total_cost=8500, unit_price=170, dt=now,
         )
+        mock_repo.list_by_user_and_vehicle.return_value = [new]
+        mock_repo.list_all_by_vehicle_asc.return_value = [old, new]
+        service = FuelRecordService(mock_repo)
+        results = service.list_fuel_records(user_id=USER_ID, vehicle_id=VEHICLE_ID)
+        assert results[0].distance_traveled == 500
+        assert results[0].fuel_amount == 50.0
+        assert results[0].fuel_efficiency == 10.0
 
-        # execute が2回呼ばれる（list用、全件取得用）
-        mock_result_list = MagicMock()
-        mock_result_list.scalars().all.return_value = [record_new]
+    def test_fuel_efficiency_rounded(self, mock_repo):
+        """Fuel efficiency rounded to 2 decimal places."""
+        record = _make_record(RECORD_ID, total_mileage=450, total_cost=8330, unit_price=170)
+        mock_repo.list_by_user_and_vehicle.return_value = [record]
+        mock_repo.list_all_by_vehicle_asc.return_value = [record]
+        service = FuelRecordService(mock_repo)
+        results = service.list_fuel_records(user_id=USER_ID, vehicle_id=VEHICLE_ID)
+        assert results[0].fuel_amount == 49.0
+        assert results[0].fuel_efficiency == 9.18
 
-        mock_result_all = MagicMock()
-        mock_result_all.scalars().all.return_value = [record_old, record_new]  # 昇順
-
-        mock_db_session.execute.side_effect = [mock_result_list, mock_result_all]
-
-        service = FuelRecordService(mock_db_session)
-        records = service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
-
-        assert len(records) == 1
-        # 走行距離 = 1000 - 500 = 500km
-        assert records[0].distance_traveled == 500
-        # 給油量 = 8500 / 170 = 50L
-        assert records[0].fuel_amount == 50.0
-        # 燃費 = 500 / 50 = 10.0 km/L
-        assert records[0].fuel_efficiency == 10.0
-    def test_fuel_efficiency_rounding(self, mock_db_session: MagicMock) -> None:
-        """燃費は小数点2桁で丸められる."""
-        user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
-        vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
-        now = datetime.now(JST)
-
-        record1 = FuelRecord(
-            id=UUID("550e8400-e29b-41d4-a716-446655440101"),
-            vehicle_id=vehicle_id,
-            user_id=user_id,
-            refuel_datetime=now,
-            total_mileage=450,
-            fuel_type="ハイオク",
-            unit_price=170,
-            total_cost=8330,  # 8330 / 170 = 49.0
-            created_at=now,
-            updated_at=now,
-        )
-
-        mock_result = MagicMock()
-        mock_result.scalars().all.return_value = [record1]
-        mock_db_session.execute.return_value = mock_result
-
-        service = FuelRecordService(mock_db_session)
-        records = service.list_fuel_records(user_id=user_id, vehicle_id=vehicle_id)
-
-        assert len(records) == 1
-        # 給油量 = 8330 / 170 = 49.0
-        assert records[0].fuel_amount == 49.0
-        # 燃費 = 450 / 49.0 = 9.18367... → 9.18
-        assert records[0].fuel_efficiency == 9.18
+    def test_no_vehicle_id_skips_calculation(self, mock_repo):
+        """Without vehicle_id, calculation fields are None."""
+        record = _make_record(RECORD_ID, total_mileage=500, total_cost=8500, unit_price=170)
+        mock_repo.list_by_user_and_vehicle.return_value = [record]
+        service = FuelRecordService(mock_repo)
+        results = service.list_fuel_records(user_id=USER_ID)
+        assert results[0].distance_traveled is None
+        mock_repo.list_all_by_vehicle_asc.assert_not_called()
 
 
 class TestFuelRecordServiceCreateFuelRecord:
-    """FuelRecordService.create_fuel_record テスト."""
-    def test_create_fuel_record_success(self, mock_db_session: MagicMock) -> None:
-        """燃費記録作成成功."""
-        user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
-        vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
+    """create_fuel_record tests."""
+
+    def test_create_success(self, mock_repo):
+        """Creates a fuel record."""
         now = datetime.now(JST)
-
-        fuel_record_create = FuelRecordCreate(
-            vehicle_id=vehicle_id,
-            refuel_datetime=now,
-            total_mileage=100,
-            fuel_type="ハイオク",
-            unit_price=165,
-            total_cost=6600,
-            is_full_tank=True,
-            gas_station_name="ENEOS 1",
+        data = FuelRecordCreate(
+            vehicle_id=VEHICLE_ID, refuel_datetime=now, total_mileage=100,
+            fuel_type='regular', unit_price=165, total_cost=6600,
+            is_full_tank=True, gas_station_name='ENEOS',
         )
+        service = FuelRecordService(mock_repo)
+        result = service.create_fuel_record(data, USER_ID)
+        assert result.user_id == USER_ID
+        assert result.vehicle_id == VEHICLE_ID
+        mock_repo.save.assert_called_once()
 
-        service = FuelRecordService(mock_db_session)
-        result = service.create_fuel_record(fuel_record_create, user_id)
-
-        assert result.user_id == user_id
-        assert result.vehicle_id == vehicle_id
-        assert result.fuel_type == "ハイオク"
-    def test_create_fuel_record_with_minimal_fields(
-        self, mock_db_session: MagicMock
-    ) -> None:
-        """最小限フィールドで作成."""
-        user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
-        vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
+    def test_create_minimal(self, mock_repo):
+        """Minimal fields: is_full_tank defaults to False."""
         now = datetime.now(JST)
-
-        fuel_record_create = FuelRecordCreate(
-            vehicle_id=vehicle_id,
-            refuel_datetime=now,
-            total_mileage=100,
-            fuel_type="ハイオク",
-            unit_price=165,
-            total_cost=6600,
+        data = FuelRecordCreate(
+            vehicle_id=VEHICLE_ID, refuel_datetime=now, total_mileage=100,
+            fuel_type='regular', unit_price=165, total_cost=6600,
         )
-
-        service = FuelRecordService(mock_db_session)
-        result = service.create_fuel_record(fuel_record_create, user_id)
-
+        service = FuelRecordService(mock_repo)
+        result = service.create_fuel_record(data, USER_ID)
         assert result.is_full_tank is False
         assert result.gas_station_name is None
 
 
 class TestFuelRecordServiceUpdateFuelRecord:
-    """FuelRecordService.update_fuel_record テスト."""
-    def test_update_fuel_record_success(self, mock_db_session: MagicMock) -> None:
-        """燃費記録更新成功."""
-        user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
-        vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
-        fuel_record_id = UUID("550e8400-e29b-41d4-a716-446655440101")
+    """update_fuel_record tests."""
+
+    def test_update_success(self, mock_repo):
+        """Updates a fuel record."""
         now = datetime.now(JST)
-
-        fuel_record = FuelRecord(
-            id=fuel_record_id,
-            vehicle_id=vehicle_id,
-            user_id=user_id,
-            refuel_datetime=now,
-            total_mileage=100,
-            fuel_type="ハイオク",
-            unit_price=165,
-            total_cost=6600,
-            created_at=now,
-            updated_at=now,
+        rec = FuelRecord(
+            vehicle_id=VEHICLE_ID, user_id=USER_ID, refuel_datetime=now,
+            total_mileage=100, fuel_type='halogen', unit_price=165, total_cost=6600,
         )
-
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = fuel_record
-        mock_db_session.execute.return_value = mock_result
-
-        fuel_record_update = FuelRecordUpdate(fuel_type="レギュラー")
-
-        service = FuelRecordService(mock_db_session)
-        result = service.update_fuel_record(
-            fuel_record_id, fuel_record_update, user_id
-        )
-
+        rec.id = RECORD_ID
+        mock_repo.get_by_id_and_user.return_value = rec
+        service = FuelRecordService(mock_repo)
+        result = service.update_fuel_record(RECORD_ID, FuelRecordUpdate(total_mileage=200), USER_ID)
         assert result is not None
-        assert result.fuel_type == "レギュラー"
+        assert result.total_mileage == 200
+
+    def test_update_not_found_returns_none(self, mock_repo):
+        """Returns None when record not found."""
+        mock_repo.get_by_id_and_user.return_value = None
+        service = FuelRecordService(mock_repo)
+        result = service.update_fuel_record(RECORD_ID, FuelRecordUpdate(total_mileage=200), USER_ID)
+        assert result is None
 
 
 class TestFuelRecordServiceDeleteFuelRecord:
-    """FuelRecordService.delete_fuel_record テスト."""
-    def test_delete_fuel_record_success(self, mock_db_session: MagicMock) -> None:
-        """燃費記録削除成功."""
-        user_id = UUID("550e8400-e29b-41d4-a716-446655440000")
-        vehicle_id = UUID("550e8400-e29b-41d4-a716-446655440001")
-        fuel_record_id = UUID("550e8400-e29b-41d4-a716-446655440101")
+    """delete_fuel_record tests."""
+
+    def test_delete_sets_deleted_at(self, mock_repo):
+        """Logical delete sets deleted_at."""
         now = datetime.now(JST)
-
-        fuel_record = FuelRecord(
-            id=fuel_record_id,
-            vehicle_id=vehicle_id,
-            user_id=user_id,
-            refuel_datetime=now,
-            total_mileage=100,
-            fuel_type="ハイオク",
-            unit_price=165,
-            total_cost=6600,
-            created_at=now,
-            updated_at=now,
+        rec = FuelRecord(
+            vehicle_id=VEHICLE_ID, user_id=USER_ID, refuel_datetime=now,
+            total_mileage=100, fuel_type='halogen', unit_price=165, total_cost=6600,
         )
-
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = fuel_record
-        mock_db_session.execute.return_value = mock_result
-
-        service = FuelRecordService(mock_db_session)
-        result = service.delete_fuel_record(fuel_record_id, user_id)
-
+        rec.id = RECORD_ID
+        rec.deleted_at = None
+        mock_repo.get_by_id_and_user.return_value = rec
+        service = FuelRecordService(mock_repo)
+        result = service.delete_fuel_record(RECORD_ID, USER_ID)
         assert result is True
-        assert fuel_record.deleted_at is not None
+        assert rec.deleted_at is not None
+
+    def test_delete_not_found_returns_false(self, mock_repo):
+        """Returns False when record not found."""
+        mock_repo.get_by_id_and_user.return_value = None
+        service = FuelRecordService(mock_repo)
+        result = service.delete_fuel_record(RECORD_ID, USER_ID)
+        assert result is False

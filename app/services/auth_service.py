@@ -1,31 +1,22 @@
+"""認証サービス."""
+
 import httpx
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.schemas.user import UserCreate
-from app.services.user_service import UserService
 from app.security.jwt import create_access_token
+from app.services.user_service import UserService
 
 
 class AuthService:
-    """
-    Auth Service with the goal to
-        - 1 : Fetching Google's access token using the OAuth code
-        - 2 : Retrieving user profile info from Google's userinfo endpoint
-        - 3 : Using user_service.get_or_create()  to persist or fetch the user
-        - 4 : Generating a JWT session token
-    """
+    """Google OAuth2 認証フローを担うサービス."""
 
     GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
     GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
-    def authenticate_google_user(self, code: str, db: Session) -> str:
-        """
-        Authenticates a user via Google OAuth code.
-        Returns a JWT access token if successful.
-        """
-        # --- Step 1: Exchange code for access token ---
+    def authenticate_google_user(self, code: str, user_service: UserService) -> str:
+        """Google OAuth コードを検証してJWTトークンを返す."""
         token_data = self._exchange_code_for_token(code)
         access_token = token_data.get("access_token")
         if not access_token:
@@ -33,11 +24,12 @@ class AuthService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Failed to retrieve access token from Google",
             )
-        # --- Step 2 : Fetch user info from Google ---
+
         user_info = self._fetch_user_info(access_token)
         email = user_info.get("email")
         name = user_info.get("name")
         picture = user_info.get("picture")
+
         if not email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -48,21 +40,18 @@ class AuthService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Google account email is not verified.",
             )
-        # --- Step 3 : Upsert user in DB ---
+
         user_in = UserCreate(
-            email=email, name=name or email.split("@")[0], avatar_url=picture
+            email=email,
+            name=name or email.split("@")[0],
+            avatar_url=picture,
         )
-        user = UserService(db).get_or_create(user_in=user_in)
-        # --- Step 4 : Create JWT session token ---
-        jwt_token = create_access_token(data={"sub": user.email})
-        return jwt_token
+        user = user_service.get_or_create(user_in=user_in)
+        return create_access_token(data={"sub": user.email})
 
     def _exchange_code_for_token(self, code: str) -> dict:
-        """Exchanges OAuth code for access token."""
+        """OAuth コードをアクセストークンと交換."""
         redirect_uri = f"{settings.BACKEND_URL}/api/auth/google/callback"
-
-        print(f"DEBUG: AuthService token exchange redirect_uri: {redirect_uri}")
-
         with httpx.Client() as client:
             response = client.post(
                 self.GOOGLE_TOKEN_URL,
@@ -75,7 +64,6 @@ class AuthService:
                 },
                 headers={"Accept": "application/json"},
             )
-
         if response.status_code != 200:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -84,7 +72,7 @@ class AuthService:
         return response.json()
 
     def _fetch_user_info(self, access_token: str) -> dict:
-        """Fetches user profile from Google."""
+        """Google からユーザー情報を取得."""
         with httpx.Client() as client:
             response = client.get(
                 self.GOOGLE_USERINFO_URL,
@@ -98,5 +86,4 @@ class AuthService:
         return response.json()
 
 
-#  ---  Singleton instance ----
 auth_service = AuthService()

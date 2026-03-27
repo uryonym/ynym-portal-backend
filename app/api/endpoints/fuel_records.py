@@ -9,54 +9,30 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.database import get_session
-from app.schemas.fuel_record import (
-    FuelRecordCreate,
-    FuelRecordResponse,
-    FuelRecordUpdate,
-)
+from app.repositories.fuel_record_repository import FuelRecordRepository
+from app.schemas.fuel_record import FuelRecordCreate, FuelRecordResponse, FuelRecordUpdate
 from app.security.deps import CurrentUser
 from app.services.fuel_record_service import FuelRecordService
 from app.utils.exceptions import NotFoundException
 
-router = APIRouter(
-    prefix="/fuel-records",
-    tags=["fuel-records"],
-)
+router = APIRouter(prefix="/fuel-records", tags=["fuel-records"])
+
+
+def _get_fuel_record_service(db: Session = Depends(get_session)) -> FuelRecordService:
+    return FuelRecordService(FuelRecordRepository(db))
 
 
 @router.get("", response_model=dict)
 def list_fuel_records(
     current_user: CurrentUser,
-    vehicle_id: UUID = Query(..., description="車 ID"),
-    skip: int = Query(0, ge=0, description="スキップするレコード数"),
-    limit: int = Query(100, ge=1, le=1000, description="取得するレコード数"),
-    db_session: Session = Depends(get_session),
+    vehicle_id: UUID = Query(...),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    service: FuelRecordService = Depends(_get_fuel_record_service),
 ) -> dict:
-    """燃費記録一覧取得
-
-    指定した車の燃費記録を取得します（新規順）
-
-    Args:
-        vehicle_id: 車 ID
-        skip: スキップするレコード数（デフォルト 0）
-        limit: 取得するレコード数（デフォルト 100、最大 1000）
-        db_session: データベースセッション
-
-    Returns:
-        {
-            "data": [FuelRecordResponse, ...],
-            "message": "燃費記録一覧を取得しました"
-        }
-    """
-    service = FuelRecordService(db_session)
-    fuel_records = service.list_fuel_records(
-        user_id=current_user.id,
-        vehicle_id=vehicle_id,
-        limit=limit,
-        offset=skip,
-    )
-
-    fuel_record_responses = [
+    """燃費記録一覧取得."""
+    items = service.list_fuel_records(user_id=current_user.id, vehicle_id=vehicle_id, limit=limit, offset=skip)
+    responses = [
         FuelRecordResponse(
             id=item.record.id,
             vehicle_id=item.record.vehicle_id,
@@ -74,119 +50,59 @@ def list_fuel_records(
             created_at=item.record.created_at,
             updated_at=item.record.updated_at,
         )
-        for item in fuel_records
+        for item in items
     ]
-
-    return {
-        "data": fuel_record_responses,
-        "message": "燃費記録一覧を取得しました",
-    }
+    return {"data": responses, "message": "燃費記録一覧を取得しました"}
 
 
 @router.post("", response_model=None, status_code=status.HTTP_201_CREATED)
 def create_fuel_record(
     current_user: CurrentUser,
     body: dict = Body(default={}),
-    db_session: Session = Depends(get_session),
+    service: FuelRecordService = Depends(_get_fuel_record_service),
 ) -> Union[dict, JSONResponse]:
-    """燃費記録作成
-
-    リクエスト本体に FuelRecordCreate スキーマで指定された燃費記録情報を使用して
-    新規燃費記録を作成します。作成された燃費記録はレスポンス本体に返されます
-
-    Args:
-        request: リクエストオブジェクト
-        db_session: データベースセッション
-
-    Returns:
-        {
-            "data": FuelRecordResponse,
-            "message": "燃費記録が作成されました"
-        }
-
-    Raises:
-        422: リクエストボディのバリデーションエラー
-    """
+    """燃費記録を作成."""
     try:
-        # JSON をパースして FuelRecordCreate にバリデーション
         fuel_record_create = FuelRecordCreate(**body)
     except ValidationError as e:
-        # Pydantic バリデーションエラーを 400 で返す
-        error_messages = []
-        for error in e.errors():
-            field = error["loc"][0] if error["loc"] else "unknown"
-            msg = error["msg"]
-            error_messages.append(f"{field}: {msg}")
-
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "errors": error_messages,
-                "message": "入力データが正しくありません",
-            },
+            content={"errors": [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()], "message": "入力データが正しくありません"},
         )
     except Exception as e:
-        # JSON パースエラーなど
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "errors": [str(e)],
-                "message": "リクエストボディが不正です",
-            },
-        )
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"errors": [str(e)], "message": "リクエストボディが不正です"})
 
-    service = FuelRecordService(db_session)
-    fuel_record = service.create_fuel_record(fuel_record_create, current_user.id)
-
-    fuel_record_response = FuelRecordResponse.model_validate(fuel_record)
-
-    return {
-        "data": fuel_record_response,
-        "message": "燃費記録が作成されました",
-    }
+    created = service.create_fuel_record(fuel_record_create, current_user.id)
+    response = FuelRecordResponse(
+        id=created.id, vehicle_id=created.vehicle_id, user_id=created.user_id,
+        refuel_datetime=created.refuel_datetime, total_mileage=created.total_mileage,
+        fuel_type=created.fuel_type, unit_price=created.unit_price, total_cost=created.total_cost,
+        is_full_tank=created.is_full_tank, gas_station_name=created.gas_station_name,
+        distance_traveled=None, fuel_amount=None, fuel_efficiency=None,
+        created_at=created.created_at, updated_at=created.updated_at,
+    )
+    return {"data": response, "message": "燃費記録が作成されました"}
 
 
 @router.get("/{fuel_record_id}", response_model=None)
 def get_fuel_record(
     current_user: CurrentUser,
     fuel_record_id: UUID,
-    db_session: Session = Depends(get_session),
+    service: FuelRecordService = Depends(_get_fuel_record_service),
 ) -> Union[dict, JSONResponse]:
-    """燃費記録取得
-
-    指定した ID の燃費記録を取得します
-
-    Args:
-        fuel_record_id: 燃費記録 ID
-        db_session: データベースセッション
-
-    Returns:
-        {
-            "data": FuelRecordResponse,
-            "message": "燃費記録が取得されました"
-        }
-
-    Raises:
-        404: 燃費記録が見つかりません
-    """
-    service = FuelRecordService(db_session)
-    try:
-        fuel_record = service.get_fuel_record(fuel_record_id, current_user.id)
-    except NotFoundException as e:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={
-                "error": str(e),
-                "message": "燃費記録が見つかりません",
-            },
-        )
-
-    fuel_record_response = FuelRecordResponse.model_validate(fuel_record)
-
-    return {
-        "data": fuel_record_response,
-        "message": "燃費記録が取得されました",
-    }
+    """燃費記録を取得."""
+    record = service.get_fuel_record(fuel_record_id, current_user.id)
+    if not record:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "燃費記録が見つかりません"})
+    response = FuelRecordResponse(
+        id=record.id, vehicle_id=record.vehicle_id, user_id=record.user_id,
+        refuel_datetime=record.refuel_datetime, total_mileage=record.total_mileage,
+        fuel_type=record.fuel_type, unit_price=record.unit_price, total_cost=record.total_cost,
+        is_full_tank=record.is_full_tank, gas_station_name=record.gas_station_name,
+        distance_traveled=None, fuel_amount=None, fuel_efficiency=None,
+        created_at=record.created_at, updated_at=record.updated_at,
+    )
+    return {"data": response, "message": "燃費記録を取得しました"}
 
 
 @router.put("/{fuel_record_id}", response_model=None)
@@ -194,110 +110,41 @@ def update_fuel_record(
     current_user: CurrentUser,
     fuel_record_id: UUID,
     body: dict = Body(default={}),
-    db_session: Session = Depends(get_session),
+    service: FuelRecordService = Depends(_get_fuel_record_service),
 ) -> Union[dict, JSONResponse]:
-    """燃費記録更新
-
-    指定された燃費記録 ID の燃費記録情報を更新します
-    リクエスト本体で指定されたフィールドのみが更新されます
-
-    Args:
-        fuel_record_id: 燃費記録 ID
-        request: リクエストオブジェクト
-        db_session: データベースセッション
-
-    Returns:
-        {
-            "data": FuelRecordResponse,
-            "message": "燃費記録が更新されました"
-        }
-
-    Raises:
-        400: リクエストボディのバリデーションエラー
-        404: 燃費記録が見つかりません
-    """
+    """燃費記録を更新."""
     try:
-        # JSON をパースして FuelRecordUpdate にバリデーション
         fuel_record_update = FuelRecordUpdate(**body)
     except ValidationError as e:
-        # Pydantic バリデーションエラーを 400 で返す
-        error_messages = []
-        for error in e.errors():
-            field = error["loc"][0] if error["loc"] else "unknown"
-            msg = error["msg"]
-            error_messages.append(f"{field}: {msg}")
-
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "errors": error_messages,
-                "message": "入力データが正しくありません",
-            },
+            content={"errors": [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()], "message": "入力データが正しくありません"},
         )
     except Exception as e:
-        # JSON パースエラーなど
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "errors": [str(e)],
-                "message": "リクエストボディが不正です",
-            },
-        )
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"errors": [str(e)], "message": "リクエストボディが不正です"})
 
-    service = FuelRecordService(db_session)
-    try:
-        fuel_record = service.update_fuel_record(
-            fuel_record_id, fuel_record_update, current_user.id
-        )
-    except NotFoundException as e:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={
-                "error": str(e),
-                "message": "燃費記録が見つかりません",
-            },
-        )
-
-    fuel_record_response = FuelRecordResponse.model_validate(fuel_record)
-
-    return {
-        "data": fuel_record_response,
-        "message": "燃費記録が更新されました",
-    }
+    updated = service.update_fuel_record(fuel_record_id, fuel_record_update, current_user.id)
+    if not updated:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "燃費記録が見つかりません"})
+    response = FuelRecordResponse(
+        id=updated.id, vehicle_id=updated.vehicle_id, user_id=updated.user_id,
+        refuel_datetime=updated.refuel_datetime, total_mileage=updated.total_mileage,
+        fuel_type=updated.fuel_type, unit_price=updated.unit_price, total_cost=updated.total_cost,
+        is_full_tank=updated.is_full_tank, gas_station_name=updated.gas_station_name,
+        distance_traveled=None, fuel_amount=None, fuel_efficiency=None,
+        created_at=updated.created_at, updated_at=updated.updated_at,
+    )
+    return {"data": response, "message": "燃費記録が更新されました"}
 
 
-@router.delete(
-    "/{fuel_record_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{fuel_record_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_fuel_record(
     current_user: CurrentUser,
     fuel_record_id: UUID,
-    db_session: Session = Depends(get_session),
-) -> Union[None, JSONResponse]:
-    """燃費記録削除
-
-    指定した燃費記録を削除します（論理削除）
-
-    Args:
-        fuel_record_id: 燃費記録 ID
-        db_session: データベースセッション
-
-    Returns:
-        204 No Content
-
-    Raises:
-        404: 燃費記録が見つかりません
-    """
-    service = FuelRecordService(db_session)
-    try:
-        service.delete_fuel_record(fuel_record_id, current_user.id)
-    except NotFoundException as e:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={
-                "error": str(e),
-                "message": "燃費記録が見つかりません",
-            },
-        )
-
-    return None
+    service: FuelRecordService = Depends(_get_fuel_record_service),
+) -> None:
+    """燃費記録を削除."""
+    deleted = service.delete_fuel_record(fuel_record_id, current_user.id)
+    if not deleted:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="燃費記録が見つかりません")
