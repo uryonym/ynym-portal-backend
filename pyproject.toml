@@ -20,11 +20,13 @@ dev = [
     "pytest",
     "httpx",
     "ruff",
-    "mypy",
-    "mkdocs",
-    "mkdocs-material",
     "pytest-mock",
 ]
+
+# uv に関する設定
+[tool.uv]
+## 1週間のクールダウンを設定
+exclude-newer = "1 week"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
