@@ -1,14 +1,13 @@
 """車両関連エンドポイント."""
 
-from typing import List, Union
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from sqlalchemy.orm import Session
 
-from app.database import get_session
+from app.core.db import SessionDep
 from app.repositories.vehicle_repository import VehicleRepository
 from app.schemas.vehicle import VehicleCreate, VehicleResponse, VehicleUpdate
 from app.security.deps import CurrentUser
@@ -18,7 +17,7 @@ from app.utils.exceptions import NotFoundException
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
 
 
-def _get_vehicle_service(db: Session = Depends(get_session)) -> VehicleService:
+def _get_vehicle_service(db: SessionDep) -> VehicleService:
     return VehicleService(VehicleRepository(db))
 
 
@@ -49,13 +48,22 @@ def create_vehicle(
     except ValidationError as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"errors": [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()], "message": "入力データが正しくありません"},
+            content={
+                "errors": [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()],
+                "message": "入力データが正しくありません",
+            },
         )
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"errors": [str(e)], "message": "リクエストボディが不正です"})
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"errors": [str(e)], "message": "リクエストボディが不正です"},
+        )
 
     created = service.create_vehicle(vehicle_create, current_user.id)
-    return {"data": VehicleResponse.model_validate(created), "message": "車が作成されました"}
+    return {
+        "data": VehicleResponse.model_validate(created),
+        "message": "車が作成されました",
+    }
 
 
 @router.get("/{vehicle_id}", response_model=None)
@@ -68,8 +76,14 @@ def get_vehicle(
     try:
         vehicle = service.get_vehicle(vehicle_id, current_user.id)
     except NotFoundException as e:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"error": str(e), "message": "車が見つかりません"})
-    return {"data": VehicleResponse.model_validate(vehicle), "message": "車が取得されました"}
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"error": str(e), "message": "車が見つかりません"},
+        )
+    return {
+        "data": VehicleResponse.model_validate(vehicle),
+        "message": "車が取得されました",
+    }
 
 
 @router.put("/{vehicle_id}", response_model=None)
@@ -85,16 +99,28 @@ def update_vehicle(
     except ValidationError as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"errors": [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()], "message": "入力データが正しくありません"},
+            content={
+                "errors": [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()],
+                "message": "入力データが正しくありません",
+            },
         )
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"errors": [str(e)], "message": "リクエストボディが不正です"})
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"errors": [str(e)], "message": "リクエストボディが不正です"},
+        )
 
     try:
         updated = service.update_vehicle(vehicle_id, vehicle_update, current_user.id)
     except NotFoundException as e:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"error": str(e), "message": "車が見つかりません"})
-    return {"data": VehicleResponse.model_validate(updated), "message": "車が更新されました"}
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"error": str(e), "message": "車が見つかりません"},
+        )
+    return {
+        "data": VehicleResponse.model_validate(updated),
+        "message": "車が更新されました",
+    }
 
 
 @router.delete("/{vehicle_id}", status_code=status.HTTP_204_NO_CONTENT)

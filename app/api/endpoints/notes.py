@@ -1,14 +1,13 @@
 """ノート関連エンドポイント."""
 
-from typing import List, Union
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from sqlalchemy.orm import Session
 
-from app.database import get_session
+from app.core.db import SessionDep
 from app.repositories.note_category_repository import NoteCategoryRepository
 from app.repositories.note_repository import NoteRepository
 from app.schemas.note import NoteCreate, NoteResponse, NoteUpdate
@@ -19,12 +18,16 @@ from app.utils.exceptions import NotFoundException
 router = APIRouter(prefix="/notes", tags=["notes"])
 
 
-def _get_note_service(db: Session = Depends(get_session)) -> NoteService:
+def _get_note_service(db: SessionDep) -> NoteService:
     return NoteService(NoteRepository(db), NoteCategoryRepository(db))
 
 
 def _not_found_message(error: NotFoundException) -> str:
-    return "カテゴリが見つかりません" if "カテゴリ ID" in str(error) else "ノートが見つかりません"
+    return (
+        "カテゴリが見つかりません"
+        if "カテゴリ ID" in str(error)
+        else "ノートが見つかりません"
+    )
 
 
 @router.get("", response_model=dict)
@@ -36,7 +39,10 @@ def list_notes(
 ) -> dict:
     """ノート一覧を取得."""
     notes = service.list_notes(user_id=current_user.id, skip=skip, limit=limit)
-    return {"data": [NoteResponse.model_validate(n) for n in notes], "message": "ノート一覧を取得しました"}
+    return {
+        "data": [NoteResponse.model_validate(n) for n in notes],
+        "message": "ノート一覧を取得しました",
+    }
 
 
 @router.post("", response_model=None, status_code=status.HTTP_201_CREATED)
@@ -51,16 +57,28 @@ def create_note(
     except ValidationError as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"errors": [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()], "message": "入力データが正しくありません"},
+            content={
+                "errors": [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()],
+                "message": "入力データが正しくありません",
+            },
         )
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"errors": [str(e)], "message": "リクエストボディが不正です"})
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"errors": [str(e)], "message": "リクエストボディが不正です"},
+        )
 
     try:
         created = service.create_note(note_create, current_user.id)
     except NotFoundException as e:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"error": str(e), "message": _not_found_message(e)})
-    return {"data": NoteResponse.model_validate(created), "message": "ノートが作成されました"}
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"error": str(e), "message": _not_found_message(e)},
+        )
+    return {
+        "data": NoteResponse.model_validate(created),
+        "message": "ノートが作成されました",
+    }
 
 
 @router.get("/{note_id}", response_model=None)
@@ -73,8 +91,14 @@ def get_note(
     try:
         note = service.get_note(note_id, current_user.id)
     except NotFoundException as e:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"error": str(e), "message": "ノートが見つかりません"})
-    return {"data": NoteResponse.model_validate(note), "message": "ノートが取得されました"}
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"error": str(e), "message": "ノートが見つかりません"},
+        )
+    return {
+        "data": NoteResponse.model_validate(note),
+        "message": "ノートが取得されました",
+    }
 
 
 @router.put("/{note_id}", response_model=None)
@@ -90,16 +114,28 @@ def update_note(
     except ValidationError as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"errors": [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()], "message": "入力データが正しくありません"},
+            content={
+                "errors": [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()],
+                "message": "入力データが正しくありません",
+            },
         )
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"errors": [str(e)], "message": "リクエストボディが不正です"})
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"errors": [str(e)], "message": "リクエストボディが不正です"},
+        )
 
     try:
         updated = service.update_note(note_id, note_update, current_user.id)
     except NotFoundException as e:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"error": str(e), "message": _not_found_message(e)})
-    return {"data": NoteResponse.model_validate(updated), "message": "ノートが更新されました"}
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"error": str(e), "message": _not_found_message(e)},
+        )
+    return {
+        "data": NoteResponse.model_validate(updated),
+        "message": "ノートが更新されました",
+    }
 
 
 @router.delete("/{note_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -4,9 +4,8 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from jose import JWTError
-from sqlalchemy.orm import Session
 
-from app.database import get_session
+from app.core.db import SessionDep
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.security.jwt import decode_access_token
@@ -21,7 +20,7 @@ credentials_exception = HTTPException(
 
 def get_current_user(
     request: Request,
-    db: Annotated[Session, Depends(get_session)],
+    db: SessionDep,
 ) -> User:
     """HttpOnly クッキーから JWT を検証し、現在のユーザーを返す."""
     token = request.cookies.get("access_token")

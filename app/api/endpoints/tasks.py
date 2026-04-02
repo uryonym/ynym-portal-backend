@@ -6,9 +6,8 @@ from uuid import UUID
 from fastapi import APIRouter, Body, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from pydantic import ValidationError
-from sqlalchemy.orm import Session
 
-from app.database import get_session
+from app.core.db import SessionDep
 from app.repositories.task_repository import TaskRepository
 from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate
 from app.security.deps import CurrentUser
@@ -18,7 +17,7 @@ from app.utils.exceptions import NotFoundException
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
-def _get_task_service(db: Session = Depends(get_session)) -> TaskService:
+def _get_task_service(db: SessionDep) -> TaskService:
     return TaskService(TaskRepository(db))
 
 

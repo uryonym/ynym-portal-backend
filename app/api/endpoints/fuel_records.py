@@ -6,19 +6,17 @@ from uuid import UUID
 from fastapi import APIRouter, Body, Depends, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from sqlalchemy.orm import Session
 
-from app.database import get_session
+from app.core.db import SessionDep
 from app.repositories.fuel_record_repository import FuelRecordRepository
 from app.schemas.fuel_record import FuelRecordCreate, FuelRecordResponse, FuelRecordUpdate
 from app.security.deps import CurrentUser
 from app.services.fuel_record_service import FuelRecordService
-from app.utils.exceptions import NotFoundException
 
 router = APIRouter(prefix="/fuel-records", tags=["fuel-records"])
 
 
-def _get_fuel_record_service(db: Session = Depends(get_session)) -> FuelRecordService:
+def _get_fuel_record_service(db: SessionDep) -> FuelRecordService:
     return FuelRecordService(FuelRecordRepository(db))
 
 

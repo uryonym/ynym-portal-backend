@@ -5,10 +5,9 @@ from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
-from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.database import get_session
+from app.core.db import SessionDep
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import auth_service
 from app.services.user_service import UserService
@@ -16,7 +15,7 @@ from app.services.user_service import UserService
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def _get_user_service(db: Session = Depends(get_session)) -> UserService:
+def _get_user_service(db: SessionDep) -> UserService:
     return UserService(UserRepository(db))
 
 
@@ -38,7 +37,9 @@ def google_login(request: Request):
         "access_type": "offline",
         "prompt": "select_account",
     }
-    google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+    google_auth_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+    )
     response = RedirectResponse(url=google_auth_url)
     response.set_cookie(
         key="oauth_state",
@@ -61,10 +62,14 @@ def google_callback(
     """Google コールバックを処理してJWTクッキーをセット."""
     stored_state = request.cookies.get("oauth_state")
     if not stored_state or stored_state != state:
-        raise HTTPException(status_code=400, detail="Invalid state parameter - possible CSRF attack")
+        raise HTTPException(
+            status_code=400, detail="Invalid state parameter - possible CSRF attack"
+        )
 
     try:
-        jwt_token = auth_service.authenticate_google_user(code=code, user_service=user_service)
+        jwt_token = auth_service.authenticate_google_user(
+            code=code, user_service=user_service
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -91,7 +96,12 @@ def google_callback(
 def logout():
     """ログアウト（セッションクッキーを削除）."""
     response = JSONResponse(content={"message": "Successfully logged out"})
-    delete_params = {"key": "access_token", "httponly": True, "samesite": "lax", "path": "/"}
+    delete_params = {
+        "key": "access_token",
+        "httponly": True,
+        "samesite": "lax",
+        "path": "/",
+    }
     if settings.ENVIRONMENT == "development":
         delete_params["domain"] = "localhost"
     response.delete_cookie(**delete_params)
