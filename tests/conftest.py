@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.database import get_session
+from app.core.db import SessionDep, get_session
 from app.main import app
 from app.models.base import Base, JST
 from app.models.user import User
@@ -65,7 +65,7 @@ def _override_current_user() -> User:
 
 
 @pytest.fixture
-def client(db_session: Session) -> TestClient:
+def client(db_session: SessionDep) -> TestClient:
     """FastAPI テストクライアント（SQLite in-memory DB + 認証モック）."""
 
     def _override_get_session():
