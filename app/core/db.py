@@ -19,5 +19,8 @@ def get_db() -> Generator[Session, None, None]:
         yield session
 
 
+# 互換性のためのエイリアス
+get_session = get_db
+
 # 依存関係注入用の型エイリアス
 SessionDep = Annotated[Session, Depends(get_db)]
