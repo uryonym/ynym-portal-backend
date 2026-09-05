@@ -1,21 +1,18 @@
+"""ユーザーモデル."""
+
 from typing import Optional
-from sqlmodel import Field, SQLModel
-from sqlalchemy import DateTime
-import uuid
-from datetime import datetime
 
-from app.models.base import JST
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.models.base import Base, TimestampMixin, UUIDPKMixin
 
 
-class User(SQLModel, table=True):
+class User(UUIDPKMixin, TimestampMixin, Base):
+    """ユーザーモデル."""
+
     __tablename__ = "users"
 
-    id: uuid.UUID = Field(primary_key=True, index=True, default_factory=uuid.uuid4)
-    email: str = Field(unique=True, index=True, nullable=False)
-    name: str = Field(nullable=True)
-    avatar_url: Optional[str] = Field(nullable=True)
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(JST),
-        sa_type=DateTime(timezone=True),
-        nullable=False,
-    )
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(255))
+    avatar_url: Mapped[Optional[str]] = mapped_column(String(500))

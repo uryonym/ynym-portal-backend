@@ -1,0 +1,16 @@
+{
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.tabSize": 4,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports.ruff": "always"
+    }
+  },
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "standard",
+  "chat.tools.terminal.autoApprove": {
+    "mkdir": true,
+    "mv": true,
+    "touch": true
+  }
+}

@@ -2,32 +2,16 @@
 
 from uuid import UUID
 
-from sqlmodel import Field
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import UUIDModel
+from app.models.base import Base, TimestampMixin, UUIDPKMixin
 
 
-class NoteCategory(UUIDModel, table=True):
-    """
-    ノートカテゴリモデル.
-
-    ユーザーが作成するノートのカテゴリを表現する。
-
-    Attributes:
-        user_id: カテゴリ所有ユーザーの UUID
-        name: カテゴリ名（必須、255 字以内）
-    """
+class NoteCategory(UUIDPKMixin, TimestampMixin, Base):
+    """ノートカテゴリモデル."""
 
     __tablename__ = "note_categories"
 
-    # Foreign Keys
-    user_id: UUID = Field(
-        index=True,
-        description="カテゴリ所有ユーザーの UUID",
-    )
-
-    # Core Fields
-    name: str = Field(
-        max_length=255,
-        description="カテゴリ名（必須、255 字以内）",
-    )
+    user_id: Mapped[UUID] = mapped_column(index=True)
+    name: Mapped[str] = mapped_column(String(255))

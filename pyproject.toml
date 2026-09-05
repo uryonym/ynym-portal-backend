@@ -5,36 +5,34 @@ description = "FastAPI backend system for ynym portal"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi[standard]>=0.135.0",
-    "sqlalchemy>=2.0.48",
-    "pydantic>=2.12.5",
-    "pydantic-settings>=2.13.1",
-    "psycopg[binary]>=3.3.3",
-    "sqlmodel",
-    "asyncpg",
+    "fastapi[standard]>=0.141.1",
+    "sqlalchemy>=2.0.52",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "psycopg[binary]>=3.3.4",
     "python-jose[cryptography]",
     "passlib[bcrypt]",
-    "greenlet>=3.2.4",
+    "greenlet>=3.5.5",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest",
-    "pytest-asyncio",
     "httpx",
     "ruff",
-    "mypy",
-    "mkdocs",
-    "mkdocs-material",
+    "pytest-mock",
 ]
 
+# uv に関する設定
+[tool.uv]
+## 1週間のクールダウンを設定
+exclude-newer = "1 week"
+
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 addopts = "--strict-markers"
 markers = [
     "unit: Mark test as unit test",
     "integration: Mark test as integration test",
-    "asyncio: Mark test as async test",
 ]

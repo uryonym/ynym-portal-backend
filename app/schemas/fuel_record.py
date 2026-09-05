@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class FuelRecordCreate(BaseModel):
@@ -170,7 +170,4 @@ class FuelRecordResponse(BaseModel):
     created_at: datetime = Field(description="作成日時（JST）")
     updated_at: datetime = Field(description="更新日時（JST）")
 
-    class Config:
-        """Pydantic v2 設定."""
-
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -1,7 +1,7 @@
 FROM python:3.12-slim-bookworm
 
 # uv パッケージマネージャーをインストール
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.10.11 /uv /uvx /bin/
 
 # uv の環境変数を設定
 ENV PATH="/app/.venv/bin:$PATH" \

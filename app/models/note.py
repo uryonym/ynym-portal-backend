@@ -3,42 +3,18 @@
 from typing import Optional
 from uuid import UUID
 
-from sqlmodel import Field
+from sqlalchemy import String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import UUIDModel
+from app.models.base import Base, TimestampMixin, UUIDPKMixin
 
 
-class Note(UUIDModel, table=True):
-    """
-    ノートモデル.
-
-    ユーザーが作成・管理するノートを表現する。
-
-    Attributes:
-        user_id: ノート所有ユーザーの UUID
-        category_id: カテゴリ ID（任意）
-        title: タイトル（必須、255 字以内）
-        body: 本文（必須）
-    """
+class Note(UUIDPKMixin, TimestampMixin, Base):
+    """ノートモデル."""
 
     __tablename__ = "notes"
 
-    # Foreign Keys
-    user_id: UUID = Field(
-        index=True,
-        description="ノート所有ユーザーの UUID",
-    )
-    category_id: Optional[UUID] = Field(
-        default=None,
-        index=True,
-        description="カテゴリ ID（任意）",
-    )
-
-    # Core Fields
-    title: str = Field(
-        max_length=255,
-        description="タイトル（必須、255 字以内）",
-    )
-    body: str = Field(
-        description="本文（必須）",
-    )
+    user_id: Mapped[UUID] = mapped_column(index=True)
+    category_id: Mapped[Optional[UUID]] = mapped_column(index=True)
+    title: Mapped[str] = mapped_column(String(255))
+    body: Mapped[str] = mapped_column(Text)

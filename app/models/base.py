@@ -1,56 +1,52 @@
 """データベースモデルのベース設定."""
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import DateTime
-from sqlmodel import Field, SQLModel
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 # 日本時間（JST）のタイムゾーン設定
 JST = timezone(timedelta(hours=9))
 
 
-class TimestampModel(SQLModel):
-    """
-    作成日時・更新日時フィールドを持つ基本モデル.
+class Base(DeclarativeBase):
+    """SQLAlchemy 宣言ベースクラス."""
 
-    すべてのドメインモデルはこのクラスを継承する.
+    pass
+
+
+class TimestampMixin:
+    """作成日時・更新日時フィールドを持つ Mixin.
 
     Note: PostgreSQL TIMESTAMP WITH TIME ZONE に日本時間（JST）で保存されます。
     """
 
-    created_at: Optional[datetime] = Field(
-        default_factory=lambda: datetime.now(JST),
-        sa_type=DateTime(timezone=True),
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(JST),
         nullable=False,
-        description="レコード作成日時（日本時間 JST）",
     )
-    updated_at: Optional[datetime] = Field(
-        default_factory=lambda: datetime.now(JST),
-        sa_type=DateTime(timezone=True),
-        sa_column_kwargs={"onupdate": lambda: datetime.now(JST)},
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(JST),
+        onupdate=lambda: datetime.now(JST),
         nullable=False,
-        description="レコード最終更新日時（日本時間 JST）",
     )
 
 
-class UUIDModel(TimestampModel):
-    """
-    UUID プライマリキーを持つ基本モデル.
+class UUIDPKMixin:
+    """UUID プライマリキーを持つ Mixin.
 
-    すべてのドメインモデルはこのクラスを継承し、
-    UUID ベースのグローバルユニークな ID を自動生成される.
-
-    利点：
-    - グローバルユニーク：全世界でユニークな ID 生成
-    - 分散環境対応：DB レプリケーション・マイクロサービス対応
-    - プライバシー保護：シーケンシャル ID と異なり予測不可能
+    UUID ベースのグローバルユニークな ID を自動生成する。
     """
 
-    id: UUID = Field(
-        default_factory=uuid4,
+    id: Mapped[UUID] = mapped_column(
         primary_key=True,
-        nullable=False,
-        description="UUID プライマリキー（RFC 4122 準拠）",
+        default=uuid4,
     )
+
+
+# 後方互換エイリアス（既存コードからの移行期）
+TimestampModel = TimestampMixin
+UUIDModel = UUIDPKMixin

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     def database_url(self) -> str:
         """個別の要素からデータベース URL を組み立てる."""
         return (
-            f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}"
+            f"postgresql+psycopg://{self.DB_USER}:{self.DB_PASSWORD}"
             f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         )
 

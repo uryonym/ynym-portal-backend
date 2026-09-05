@@ -2,9 +2,19 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.core.config import settings
-from app.api.router import router
+from app.middleware.logging import LoggingMiddleware
 from app.utils.logging import setup_logging
+from app.routers import (
+    auth_router,
+    fuel_records_router,
+    note_categories_router,
+    notes_router,
+    tasks_router,
+    users_router,
+    vehicles_router,
+)
 
 # ロギング設定
 setup_logging()
@@ -25,11 +35,15 @@ app.add_middleware(
     allow_headers=["*"],  # すべてのヘッダーを許可
 )
 
+# HTTP リクエストロギングミドルウェア
+app.add_middleware(LoggingMiddleware)
+
+
 # ルータをマウント
-app.include_router(router, prefix="/api")
-
-
-@app.get("/health")
-async def health_check() -> dict:
-    """ヘルスチェックエンドポイント."""
-    return {"status": "ok", "environment": settings.ENVIRONMENT}
+app.include_router(auth_router)
+app.include_router(users_router)
+app.include_router(tasks_router)
+app.include_router(vehicles_router)
+app.include_router(fuel_records_router)
+app.include_router(note_categories_router)
+app.include_router(notes_router)

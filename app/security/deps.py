@@ -1,10 +1,13 @@
-from typing import Annotated
-from fastapi import Depends, HTTPException, status, Request
-from jose import JWTError
-from sqlalchemy.ext.asyncio import AsyncSession
+"""認証依存性."""
 
-from app.database import get_session
+from typing import Annotated
+
+from fastapi import Depends, HTTPException, Request, status
+from jose import JWTError
+
+from app.core.db import SessionDep
 from app.models.user import User
+from app.repositories.user_repository import UserRepository
 from app.security.jwt import decode_access_token
 from app.services.user_service import UserService
 
@@ -15,15 +18,12 @@ credentials_exception = HTTPException(
 )
 
 
-async def get_current_user(
-    request: Request, db: Annotated[AsyncSession, Depends(get_session)]
+def get_current_user(
+    request: Request,
+    db: SessionDep,
 ) -> User:
-    """
-    Dependency to get the current authenticated user.
-    Reads token from HttpOnly cookie, validates it, and fetches user from DB.
-    """
+    """HttpOnly クッキーから JWT を検証し、現在のユーザーを返す."""
     token = request.cookies.get("access_token")
-
     if token is None:
         raise credentials_exception
 
@@ -35,9 +35,8 @@ async def get_current_user(
     except (JWTError, Exception):
         raise credentials_exception
 
-    user_service = UserService(db)
-    user = await user_service.get_by_email(email=email)
-
+    user_service = UserService(UserRepository(db))
+    user = user_service.get_by_email(email=email)
     if user is None:
         raise credentials_exception
 
